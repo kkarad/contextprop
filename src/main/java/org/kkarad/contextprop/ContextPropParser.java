@@ -18,7 +18,11 @@ public final class ContextPropParser {
 
     private static final String CRITERIA_VALUE_DELIMITER = ",";
 
-    private final ParserVisitor visitor = new ParserVisitor();
+    private final ContextVisitor visitor = new ContextVisitor();
+
+    private final ParseVisitor logVisitor = new LogAndParseVisitor(
+            true,
+            visitor);
 
     private final ContextPattern contextPattern = new ContextPattern(
             CONTEXT_START_PATTERN,
@@ -26,14 +30,14 @@ public final class ContextPropParser {
             new CriteriaPattern(
                     CRITERIA_VALUE_START_PATTERN,
                     CRITERIA_VALUE_END_PATTERN,
-                    visitor,
+                    logVisitor,
                     CRITERIA_VALUE_DELIMITER,
                     CRITERIA_DELIMITER),
-            visitor);
+            logVisitor);
 
     private final Context context;
 
-    private boolean requiresDefault;
+    private boolean requiresDefault = false;
 
     public static ContextPropParser parser(Context context) {
         return new ContextPropParser(context);
@@ -50,13 +54,21 @@ public final class ContextPropParser {
 
     public Properties parse(Properties contextProperties) {
         Map<String, String> propertyMap = toPropertyMap(contextProperties);
-        visitor.startParse();
+        logVisitor.startParse();
         for (Map.Entry<String, String> entry : propertyMap.entrySet()) {
             String keyText = entry.getKey();
             parseProperty(keyText, contextPattern, entry.getValue());
         }
-        visitor.endParse(); //todo validate results
-        return null;
+        logVisitor.endParse();
+
+        Properties resolved = new Properties();
+        PropertyResolver propertyResolver = new PropertyResolver(context, requiresDefault);
+        visitor.properties().forEach(property ->
+                resolved.setProperty(
+                        property.key(),
+                        propertyResolver.resolve(property)));
+
+        return resolved;
     }
 
     private String parseProperty(String keyText, ContextPattern contextPattern, String value) {

@@ -15,7 +15,7 @@ final class CriteriaPattern {
 
     private final String valueDelimiter;
 
-    private final ParserVisitor visitor;
+    private final ParseVisitor visitor;
     private final char criteriaDelimiter;
 
     private int bufferLength = 1;
@@ -36,7 +36,7 @@ final class CriteriaPattern {
 
     private String errorMessage = null;
 
-    public CriteriaPattern(char startOfPattern, char endOfPattern, ParserVisitor visitor, String valueDelimiter, char criteriaDelimiter) {
+    public CriteriaPattern(char startOfPattern, char endOfPattern, ParseVisitor visitor, String valueDelimiter, char criteriaDelimiter) {
         this.startOfPattern = startOfPattern;
         this.endOfPattern = endOfPattern;
         this.visitor = visitor;

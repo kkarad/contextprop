@@ -1,7 +1,9 @@
-package org.kkarad.contextprop;
+package org.kkarad.contextprop.examples;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.kkarad.contextprop.Context;
+import org.kkarad.contextprop.ContextPropParser;
 
 import java.util.Properties;
 
@@ -16,10 +18,11 @@ public class ApiTest {
     @DisplayName("Basic usage")
     void basic_usage() {
 
-        Properties contextProperties = new Properties();
-        contextProperties.setProperty("my.prop.key.CTXT[env(uat),loc(ldn,nyk),group(internal),app(whatsapp),host(localhost),user(kkarad)]", "myValue");
+        Properties ctxProp = new Properties();
+        ctxProp.setProperty("my.prop.key.CTXT[env(uat),loc(ldn,nyk),group(internal),app(whatsapp),host(localhost),user(kkarad)]", "myValue");
+        ctxProp.setProperty("my.prop.key", "defaultValue");
 
-        Context context = Context.contextBasedOn(Keys.class)
+        Context context = Context.basedOn(Keys.class)
                 .entry("env", "uat")
                 .entry("loc", "ldn")
                 .entry("group", "internal")
@@ -30,7 +33,7 @@ public class ApiTest {
 
         Properties conf = ContextPropParser.parser(context)
                 .requiresDefault(false)
-                .parse(contextProperties);
+                .parse(ctxProp);
 
         assertEquals("myValue", conf.getProperty("my.prop.key"));
     }

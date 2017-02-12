@@ -15,7 +15,7 @@ public final class Context {
 
     private final Map<String, String> keyValues;
 
-    public static <E extends Enum> Builder contextBasedOn(Class<E> keys) {
+    public static <E extends Enum> Builder basedOn(Class<E> keys) {
         return new Builder(toOrderedList(keys));
     }
 
@@ -28,6 +28,14 @@ public final class Context {
     private Context(List<String> orderedKeys, Map<String, String> keyValues) {
         this.orderedKeys = orderedKeys;
         this.keyValues = keyValues;
+    }
+
+    public boolean contains(String key) {
+        return orderedKeys.contains(key);
+    }
+
+    public List<String> orderedKeys() {
+        return orderedKeys;
     }
 
 
@@ -52,8 +60,9 @@ public final class Context {
 
         public Context create() {
             if (keyValues.size() != orderedKeys.size()) {
-                throw new IllegalArgumentException(format("Entry keys don't cover all context keys (entryKeys: %s, contextKeys: %s)",
-                        keyValues.keySet(), orderedKeys));
+                String msg = format("Entry keys don't cover all context keys (entryKeys: %s, contextKeys: %s)",
+                        keyValues.keySet(), orderedKeys);
+                throw new IllegalArgumentException(msg);
             }
             return new Context(orderedKeys, keyValues);
         }

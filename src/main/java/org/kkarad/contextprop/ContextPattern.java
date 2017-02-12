@@ -12,7 +12,7 @@ final class ContextPattern {
 
     private final CriteriaPattern criteriaPattern;
 
-    private final ParserVisitor visitor;
+    private final ParseVisitor visitor;
 
     private int bufferLength = 1;
 
@@ -28,7 +28,7 @@ final class ContextPattern {
 
     private boolean endPatternFound = false;
 
-    public ContextPattern(String startOfPattern, char endOfPattern, CriteriaPattern criteriaPattern, ParserVisitor visitor) {
+    public ContextPattern(String startOfPattern, char endOfPattern, CriteriaPattern criteriaPattern, ParseVisitor visitor) {
         this.startOfPattern = startOfPattern;
         this.endOfPattern = endOfPattern;
         this.criteriaPattern = criteriaPattern;
@@ -114,6 +114,26 @@ final class ContextPattern {
         return endOfLengthReached && (character == endOfPattern);
     }
 
+    public void endProperty(String propertyValue) {
+        if (startPatternFound && propertyKey == null) {
+            errorMessage = format("Unable to recognise the '%s...%s' context pattern",
+                    startOfPattern, Character.toString(endOfPattern));
+            return;
+        }
+
+        if (startPatternFound && !endPatternFound) {
+            errorMessage = format("Property key doesn't end with the context end pattern '%s'", Character.toString(endOfPattern));
+            return;
+        }
+
+        if (!startPatternFound && !endPatternFound) {
+            propertyKey = new String(buffer, 0, bufferPosition);
+            visitor.startProperty(propertyKey);
+            visitor.endProperty(propertyKey, propertyValue);
+        }
+
+    }
+
     public boolean hasError() {
         return errorMessage != null || criteriaPattern.hasError();
     }
@@ -125,21 +145,6 @@ final class ContextPattern {
             return criteriaPattern.exception(keyText);
         }
         throw new IllegalStateException("Attempt to retrieve exception when no error exists");
-    }
-
-    public void endProperty(String propertyValue) {
-        if (propertyKey == null) {
-            errorMessage = format("Unable to recognise the '%s...%s' context pattern",
-                    startOfPattern, Character.toString(endOfPattern));
-            return;
-        }
-
-        if (!endPatternFound) {
-            errorMessage = format("Property key doesn't end with the context end pattern '%s'", Character.toString(endOfPattern));
-            return;
-        }
-
-        visitor.endProperty(propertyKey, propertyValue);
     }
 
     public String propertyKey() {
