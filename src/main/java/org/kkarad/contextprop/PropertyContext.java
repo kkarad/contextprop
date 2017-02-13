@@ -2,13 +2,13 @@ package org.kkarad.contextprop;
 
 import java.util.List;
 
-final class ContextCriteria {
+final class PropertyContext {
 
     private final List<Criterion> criteria;
 
     private final String value;
 
-    public ContextCriteria(List<Criterion> criteria, String value) {
+    public PropertyContext(List<Criterion> criteria, String value) {
         this.criteria = criteria;
         this.value = value;
     }
@@ -17,7 +17,7 @@ final class ContextCriteria {
         return criteria;
     }
 
-    public String getValue() {
+    public String value() {
         return value;
     }
 }

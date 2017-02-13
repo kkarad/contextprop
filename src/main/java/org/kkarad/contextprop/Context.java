@@ -38,6 +38,10 @@ public final class Context {
         return orderedKeys;
     }
 
+    public String value(String key) {
+        return keyValues.get(key);
+    }
+
 
     public static class Builder {
 

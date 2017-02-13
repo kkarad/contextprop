@@ -3,6 +3,7 @@ package org.kkarad.contextprop;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Stream;
 
 public final class ContextPropParser {
 
@@ -52,30 +53,37 @@ public final class ContextPropParser {
         return this;
     }
 
-    public Properties parse(Properties contextProperties) {
-        Map<String, String> propertyMap = toPropertyMap(contextProperties);
+    public Properties parse(Properties unresolved) {
+        Stream<ContextProperty> properties = doParse(unresolved);
+
+        Properties resolved = new Properties();
+        PropertyValidator propertyValidator = new PropertyValidator(context, requiresDefault);
+        PropertyResolver propertyResolver = new PropertyResolver(context);
+        properties.forEach(property -> {
+            propertyValidator.validate(property);
+            String value = propertyResolver.resolve(property);
+            if(value != null) {
+                resolved.setProperty(property.key(), value);
+            }
+        });
+        return resolved;
+    }
+
+    private Stream<ContextProperty> doParse(Properties unresolved) {
+        Map<String, String> propertyMap = toPropertyMap(unresolved);
         logVisitor.startParse();
         for (Map.Entry<String, String> entry : propertyMap.entrySet()) {
             String keyText = entry.getKey();
             parseProperty(keyText, contextPattern, entry.getValue());
         }
         logVisitor.endParse();
-
-        Properties resolved = new Properties();
-        PropertyResolver propertyResolver = new PropertyResolver(context, requiresDefault);
-        visitor.properties().forEach(property ->
-                resolved.setProperty(
-                        property.key(),
-                        propertyResolver.resolve(property)));
-
-        return resolved;
+        return visitor.properties();
     }
 
     private String parseProperty(String keyText, ContextPattern contextPattern, String value) {
         contextPattern.startProperty(keyText.length());
         for (int i = 0; i < keyText.length(); i++) {
             char character = keyText.charAt(i);
-            System.out.println("character = " + character);
             contextPattern.traverse(character);
             if (contextPattern.hasError()) {
                 throw contextPattern.exception(keyText);
