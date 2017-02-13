@@ -2,6 +2,21 @@
 
 The purpose of the library is to consolidate copies of configuration (based on environment, region, etc) into one easy to maintain configuration file. Complicated configuration directory trees which carry complexity and redundancy can be eliminated by using the 'contextprop' library.
 
+```
+src/
+  main/
+    resources/
+      env/
+        local/
+          configuration.properties
+        sit/
+          configuration.properties
+        uat/
+          configuration.properties
+        prod/
+          configuration.properties
+```
+
 Instead of having to maintain a directory tree of redundant configuration we can have one configuration file of which properties can be overridden for a specific deployment scope (environment, region, etc) by using the `.CTXT()` suffix and adding the deployment context information. Using this method we are able to define a configuration property which is the default for most of the deployments and then with the help of the context suffix we can define an exception. We don't need to create a copy of the configuration for each deployment scope.
 
 ```
