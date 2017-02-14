@@ -4,19 +4,19 @@ class Match implements Comparable<Match> {
 
     private final int noOfKeys;
 
-    private final PropertyContext propertyContext;
+    private final Context context;
 
-    public Match(int noOfKeys, PropertyContext propertyContext) {
+    public Match(int noOfKeys, Context context) {
         this.noOfKeys = noOfKeys;
-        this.propertyContext = propertyContext;
+        this.context = context;
     }
 
     public int noOfKeys() {
         return noOfKeys;
     }
 
-    public PropertyContext propertyContext() {
-        return propertyContext;
+    public Context propertyContext() {
+        return context;
     }
 
     @Override

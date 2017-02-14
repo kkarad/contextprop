@@ -5,15 +5,15 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
 
-public final class ContextPropParser {
+public final class ContextPropResolver {
 
-    private static final String CONTEXT_START_PATTERN = ".CTXT[";
+    private static final String CONTEXT_START_PATTERN = ".CTXT(";
 
-    private static final char CONTEXT_END_PATTERN = ']';
+    private static final char CONTEXT_END_PATTERN = ')';
 
-    private static final char CRITERIA_VALUE_START_PATTERN = '(';
+    private static final char CRITERIA_VALUE_START_PATTERN = '[';
 
-    private static final char CRITERIA_VALUE_END_PATTERN = ')';
+    private static final char CRITERIA_VALUE_END_PATTERN = ']';
 
     private static final char CRITERIA_DELIMITER = ',';
 
@@ -36,29 +36,29 @@ public final class ContextPropParser {
                     CRITERIA_DELIMITER),
             logVisitor);
 
-    private final Context context;
+    private final DomainPredicates predicates;
 
     private boolean requiresDefault = false;
 
-    public static ContextPropParser parser(Context context) {
-        return new ContextPropParser(context);
+    public static ContextPropResolver create(DomainPredicates predicates) {
+        return new ContextPropResolver(predicates);
     }
 
-    private ContextPropParser(Context context) {
-        this.context = context;
+    private ContextPropResolver(DomainPredicates predicates) {
+        this.predicates = predicates;
     }
 
-    public ContextPropParser requiresDefault(boolean requiresDefault) {
+    public ContextPropResolver requiresDefault(boolean requiresDefault) {
         this.requiresDefault = requiresDefault;
         return this;
     }
 
-    public Properties parse(Properties unresolved) {
+    public Properties resolve(Properties unresolved) {
         Stream<ContextProperty> properties = doParse(unresolved);
 
         Properties resolved = new Properties();
-        PropertyValidator propertyValidator = new PropertyValidator(context, requiresDefault);
-        PropertyResolver propertyResolver = new PropertyResolver(context);
+        PropertyValidator propertyValidator = new PropertyValidator(predicates.domain(), requiresDefault);
+        PropertyResolver propertyResolver = new PropertyResolver(predicates);
         properties.forEach(property -> {
             propertyValidator.validate(property);
             String value = propertyResolver.resolve(property);

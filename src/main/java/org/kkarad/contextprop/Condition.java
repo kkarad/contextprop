@@ -3,17 +3,17 @@ package org.kkarad.contextprop;
 import java.util.List;
 import java.util.Objects;
 
-final class Criterion {
-    private final String key;
+final class Condition {
+    private final String domainKey;
     private final List<String> values;
 
-    public Criterion(String key, List<String> values) {
-        this.key = key;
+    public Condition(String domainKey, List<String> values) {
+        this.domainKey = domainKey;
         this.values = values;
     }
 
-    public String key() {
-        return key;
+    public String domainKey() {
+        return domainKey;
     }
 
     public List<String> values() {
@@ -24,13 +24,13 @@ final class Criterion {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Criterion criterion = (Criterion) o;
-        return Objects.equals(key, criterion.key) &&
-                Objects.equals(values, criterion.values);
+        Condition condition = (Condition) o;
+        return Objects.equals(domainKey, condition.domainKey) &&
+                Objects.equals(values, condition.values);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(key, values);
+        return Objects.hash(domainKey, values);
     }
 }

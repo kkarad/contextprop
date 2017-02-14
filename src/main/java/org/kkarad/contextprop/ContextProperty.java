@@ -6,13 +6,13 @@ final class ContextProperty {
 
     private final String key;
 
-    private final List<PropertyContext> propertyContext;
+    private final List<Context> contexts;
 
     private final String defaultValue;
 
-    public ContextProperty(String key, List<PropertyContext> propertyContext, String defaultValue) {
+    public ContextProperty(String key, List<Context> contexts, String defaultValue) {
         this.key = key;
-        this.propertyContext = propertyContext;
+        this.contexts = contexts;
         this.defaultValue = defaultValue;
     }
 
@@ -20,8 +20,8 @@ final class ContextProperty {
         return key;
     }
 
-    public List<PropertyContext> propertyContexts() {
-        return propertyContext;
+    public List<Context> contexts() {
+        return contexts;
     }
 
     public String defaultValue() {

@@ -22,7 +22,7 @@ final class ContextVisitor implements ParseVisitor {
 
     @Override
     public void propertyCriteria(String propertyKey, String criteriaKey, String[] criteriaValues) {
-        current.add(new Criterion(criteriaKey, Arrays.asList(criteriaValues)));
+        current.add(new Condition(criteriaKey, Arrays.asList(criteriaValues)));
     }
 
     @Override
@@ -50,7 +50,7 @@ final class ContextVisitor implements ParseVisitor {
             this.key = key;
         }
 
-        public void add(PropertyContext propertyContext) {
+        public void add(Context context) {
 
         }
 
@@ -61,13 +61,13 @@ final class ContextVisitor implements ParseVisitor {
 
     private class PropertyContextBuilder {
 
-        private final List<Criterion> criteria = new ArrayList<>();
-        public void add(Criterion criterion) {
-            criteria.add(criterion);
+        private final List<Condition> criteria = new ArrayList<>();
+        public void add(Condition condition) {
+            criteria.add(condition);
         }
 
-        public PropertyContext build(String value) {
-            return new PropertyContext(criteria, value);
+        public Context build(String value) {
+            return new Context(criteria, value);
         }
 
         public void reset() {

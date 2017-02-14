@@ -5,12 +5,12 @@ import java.util.List;
 import static java.lang.String.format;
 
 public class PropertyValidator {
-    private final Context context;
+    private final Domain domain;
     private final boolean requiresDefault;
 
-    public PropertyValidator(Context context, boolean requiresDefault) {
+    public PropertyValidator(Domain domain, boolean requiresDefault) {
 
-        this.context = context;
+        this.domain = domain;
         this.requiresDefault = requiresDefault;
     }
 
@@ -25,12 +25,12 @@ public class PropertyValidator {
 
     private void validateCriteriaKeys(ContextProperty property) {
         String propertyKey = property.key();
-        property.propertyContexts()
+        property.contexts()
                 .stream()
-                .flatMap(ctxCriteria -> ctxCriteria.criteria().stream())
-                .map(Criterion::key)
+                .flatMap(ctxCriteria -> ctxCriteria.conditions().stream())
+                .map(Condition::domainKey)
                 .forEach(criteriaKey -> {
-                    if (!context.contains(criteriaKey)) {
+                    if (!domain.contains(criteriaKey)) {
                         throw invalidCriteriaKey(propertyKey, criteriaKey);
                     }
                 });
@@ -52,9 +52,9 @@ public class PropertyValidator {
     }
 
     private void validateCriteriaOrder(ContextProperty property) {
-        for (String ctxKey : context.orderedKeys()) {
+        for (String ctxKey : domain.orderedKeys()) {
             if (contextKeyExists(property, ctxKey)) {
-                for (PropertyContext ctxCriteria : property.propertyContexts()) {
+                for (Context ctxCriteria : property.contexts()) {
                     if (contextKeyMissingFrom(ctxKey, ctxCriteria) &&
                             lowerOrderContextKeyExists(ctxKey, ctxCriteria)) {
                         String ctxCriteriaAsString = toString(ctxCriteria);
@@ -66,9 +66,9 @@ public class PropertyValidator {
     }
 
     private boolean contextKeyExists(ContextProperty property, String ctxKey) {
-        for (PropertyContext ctxCriteria : property.propertyContexts()) {
-            for (Criterion criterion : ctxCriteria.criteria()) {
-                if (criterion.key().equals(ctxKey)) {
+        for (Context ctxCriteria : property.contexts()) {
+            for (Condition condition : ctxCriteria.conditions()) {
+                if (condition.domainKey().equals(ctxKey)) {
                     return true;
                 }
             }
@@ -76,46 +76,46 @@ public class PropertyValidator {
         return false;
     }
 
-    private boolean contextKeyMissingFrom(String ctxKey, PropertyContext ctxCriteria) {
-        for (Criterion criterion : ctxCriteria.criteria()) {
-            if (criterion.key().equals(ctxKey)) {
+    private boolean contextKeyMissingFrom(String ctxKey, Context ctxCriteria) {
+        for (Condition condition : ctxCriteria.conditions()) {
+            if (condition.domainKey().equals(ctxKey)) {
                 return false;
             }
         }
         return true;
     }
 
-    private boolean lowerOrderContextKeyExists(String ctxKey, PropertyContext ctxCriteria) {
-        int indexOfHighOrderKey = context.orderedKeys().indexOf(ctxKey);
-        List<String> lowOrderKeys = context.orderedKeys()
-                .subList(indexOfHighOrderKey, context.orderedKeys().size() - 1);
+    private boolean lowerOrderContextKeyExists(String ctxKey, Context ctxCriteria) {
+        int indexOfHighOrderKey = domain.orderedKeys().indexOf(ctxKey);
+        List<String> lowOrderKeys = domain.orderedKeys()
+                .subList(indexOfHighOrderKey, domain.orderedKeys().size() - 1);
 
-        for (Criterion criterion : ctxCriteria.criteria()) {
-            if (lowOrderKeys.contains(criterion.key())) {
+        for (Condition condition : ctxCriteria.conditions()) {
+            if (lowOrderKeys.contains(condition.domainKey())) {
                 return true;
             }
         }
         return false;
     }
 
-    private String toString(PropertyContext ctxCriteria) {
+    private String toString(Context ctxCriteria) {
         StringBuilder b = new StringBuilder();
-        for (String ctxKey : context.orderedKeys()) {
-            Criterion criterion = findCriteria(ctxKey, ctxCriteria);
-            if (criterion != null) {
+        for (String ctxKey : domain.orderedKeys()) {
+            Condition condition = findCriteria(ctxKey, ctxCriteria);
+            if (condition != null) {
                 b.append(b.length() != 0 ? "," : "");
-                b.append(criterion.key()).append("(");
-                appendValues(b, criterion.values());
+                b.append(condition.domainKey()).append("(");
+                appendValues(b, condition.values());
                 b.append(")");
             }
         }
         return b.toString();
     }
 
-    private Criterion findCriteria(String ctxKey, PropertyContext ctxCriteria) {
-        for (Criterion criterion : ctxCriteria.criteria()) {
-            if (criterion.key().equals(ctxKey)) {
-                return criterion;
+    private Condition findCriteria(String ctxKey, Context ctxCriteria) {
+        for (Condition condition : ctxCriteria.conditions()) {
+            if (condition.domainKey().equals(ctxKey)) {
+                return condition;
             }
         }
         return null;

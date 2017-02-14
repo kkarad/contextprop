@@ -2,8 +2,8 @@ package org.kkarad.contextprop.examples;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.kkarad.contextprop.Context;
-import org.kkarad.contextprop.ContextPropParser;
+import org.kkarad.contextprop.ContextPropResolver;
+import org.kkarad.contextprop.DomainPredicates;
 
 import java.util.Properties;
 
@@ -12,29 +12,31 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class ApiTest {
 
     @SuppressWarnings("unused")
-    enum Keys {env, loc, group, app, host, user}
+    enum MyDomain {
+        env, loc, group, app, host, user
+    }
 
     @Test
     @DisplayName("Basic usage")
     void basic_usage() {
 
-        Properties ctxProp = new Properties();
-        ctxProp.setProperty("my.prop.key.CTXT[env(uat),loc(ldn,nyk),group(internal),app(whatsapp),host(localhost),user(kkarad)]", "myValue");
-        ctxProp.setProperty("my.prop.key", "defaultValue");
+        Properties ctxProperties = new Properties();
+        ctxProperties.setProperty("my.prop.key.CTXT(env[uat],loc[ldn,nyk],group[internal],app[whatsapp],host[localhost],user[kkarad])", "myValue");
+        ctxProperties.setProperty("my.prop.key", "defaultValue");
 
-        Context context = Context.basedOn(Keys.class)
-                .entry("env", "uat")
-                .entry("loc", "ldn")
-                .entry("group", "internal")
-                .entry("app", "whatsapp")
-                .entry("host", "localhost")
-                .entry("user", "kkarad")
+        DomainPredicates predicates = DomainPredicates.basedOnDomain(MyDomain.class)
+                .predicate("env", "uat")
+                .predicate("loc", "ldn")
+                .predicate("group", "internal")
+                .predicate("app", "whatsapp")
+                .predicate("host", "localhost")
+                .predicate("user", "kkarad")
                 .create();
 
-        Properties conf = ContextPropParser.parser(context)
+        Properties properties = ContextPropResolver.create(predicates)
                 .requiresDefault(false)
-                .parse(ctxProp);
+                .resolve(ctxProperties);
 
-        assertEquals("myValue", conf.getProperty("my.prop.key"));
+        assertEquals("myValue", properties.getProperty("my.prop.key"));
     }
 }

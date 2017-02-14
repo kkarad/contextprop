@@ -6,18 +6,18 @@ import java.util.Objects;
 
 final class PropertyResolver {
 
-    private final Context context;
+    private final DomainPredicates predicates;
 
-    public PropertyResolver(Context context) {
-        this.context = context;
+    public PropertyResolver(DomainPredicates predicates) {
+        this.predicates = predicates;
     }
 
     String resolve(ContextProperty property) {
         List<Match> matches = new ArrayList<>();
-        for (PropertyContext propertyContext : property.propertyContexts()) {
-            int noOfMatchedKeys = findMatches(propertyContext, context);
+        for (Context context : property.contexts()) {
+            int noOfMatchedKeys = findMatches(context, predicates);
             if (noOfMatchedKeys > 0) {
-                matches.add(new Match(noOfMatchedKeys, propertyContext));
+                matches.add(new Match(noOfMatchedKeys, context));
             }
         }
 
@@ -25,15 +25,15 @@ final class PropertyResolver {
 
         return matches.isEmpty()
                 ? property.defaultValue() :
-                matches.iterator().next().propertyContext().value();
+                matches.iterator().next().propertyContext().propertyValue();
     }
 
-    private int findMatches(PropertyContext propertyContext, Context context) {
+    private int findMatches(Context context, DomainPredicates predicates) {
         int matches = 0;
-        for (Criterion criterion : propertyContext.criteria()) {
-            String contextValue = context.value(criterion.key());
-            Objects.requireNonNull(contextValue, "Unknown context key: " + criterion.key());
-            if (!criterion.values().contains(contextValue)) {
+        for (Condition condition : context.conditions()) {
+            String contextValue = predicates.value(condition.domainKey());
+            Objects.requireNonNull(contextValue, "Unknown context key: " + condition.domainKey());
+            if (!condition.values().contains(contextValue)) {
                 return -1;
             }
             matches++;
