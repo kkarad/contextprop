@@ -4,17 +4,17 @@ import java.util.List;
 
 import static java.lang.String.format;
 
-public class PropertyValidator {
+final class PropertyValidator {
     private final Domain domain;
     private final boolean requiresDefault;
 
-    public PropertyValidator(Domain domain, boolean requiresDefault) {
+    PropertyValidator(Domain domain, boolean requiresDefault) {
 
         this.domain = domain;
         this.requiresDefault = requiresDefault;
     }
 
-    public void validate(ContextProperty property) {
+    void validate(ContextProperty property) {
         validateCriteriaKeys(property);
         if (requiresDefault) {
             validateDefaultRequirement(property);
@@ -137,6 +137,6 @@ public class PropertyValidator {
     }
 
     private void validateCriteriaScope(ContextProperty property) {
-        //todo
+        //TODO
     }
 }

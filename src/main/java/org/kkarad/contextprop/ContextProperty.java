@@ -10,7 +10,7 @@ final class ContextProperty {
 
     private final String defaultValue;
 
-    public ContextProperty(String key, List<Context> contexts, String defaultValue) {
+    ContextProperty(String key, List<Context> contexts, String defaultValue) {
         this.key = key;
         this.contexts = contexts;
         this.defaultValue = defaultValue;
@@ -20,11 +20,11 @@ final class ContextProperty {
         return key;
     }
 
-    public List<Context> contexts() {
+    List<Context> contexts() {
         return contexts;
     }
 
-    public String defaultValue() {
+    String defaultValue() {
         return defaultValue;
     }
 }

@@ -10,7 +10,7 @@ public final class Domain {
 
     private final List<String> orderedKeys;
 
-    public static <E extends Enum> Domain create(Class<E> domainClass) {
+    static <E extends Enum> Domain create(Class<E> domainClass) {
         return new Domain(toOrderedList(domainClass));
     }
 
@@ -24,12 +24,12 @@ public final class Domain {
                 .collect(Collectors.toList()));
     }
 
-    public boolean contains(String key) {
+    boolean contains(String key) {
         return orderedKeys.contains(key);
     }
 
 
-    public int numberOfKeys() {
+    int numberOfKeys() {
         return orderedKeys.size();
     }
 
@@ -38,7 +38,7 @@ public final class Domain {
         return orderedKeys.toString();
     }
 
-    public List<String> orderedKeys() {
+    List<String> orderedKeys() {
         return orderedKeys;
     }
 }

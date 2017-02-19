@@ -36,7 +36,7 @@ final class CriteriaPattern {
 
     private String errorMessage = null;
 
-    public CriteriaPattern(char startOfPattern, char endOfPattern, ParseVisitor visitor, String valueDelimiter, char criteriaDelimiter) {
+    CriteriaPattern(char startOfPattern, char endOfPattern, ParseVisitor visitor, String valueDelimiter, char criteriaDelimiter) {
         this.startOfPattern = startOfPattern;
         this.endOfPattern = endOfPattern;
         this.visitor = visitor;
@@ -44,7 +44,7 @@ final class CriteriaPattern {
         this.criteriaDelimiter = criteriaDelimiter;
     }
 
-    public void startContext(String propertyKey, int textLength) {
+    void startContext(String propertyKey, int textLength) {
         resetContextState(propertyKey, textLength);
         resetCriteriaState(0);
         errorMessage = null;
@@ -70,7 +70,7 @@ final class CriteriaPattern {
         valueStartIndex = -1;
     }
 
-    public void traverse(char character) {
+    void traverse(char character) {
         try {
             buffer[bufferPosition] = character;
             updateState(character);
@@ -120,7 +120,7 @@ final class CriteriaPattern {
         String valueText = new String(buffer, valueStartIndex, count);
         String[] values = valueText.split(valueDelimiter);
         if (validate(criteriaKey, values)) {
-            visitor.propertyCriteria(propertyKey, criteriaKey, values);
+            visitor.propertyCondition(propertyKey, criteriaKey, values);
             criteriaComplete = true;
         }
     }
@@ -136,7 +136,7 @@ final class CriteriaPattern {
         return true;
     }
 
-    public void endContext() {
+    void endContext() {
         if (!criteriaComplete) {
             String text = new String(buffer, criteriaStartIndex, bufferPosition - criteriaStartIndex);
             errorMessage = format("Reached end of context of property key (%s) without recognising criteria from text: '%s'",
@@ -144,11 +144,11 @@ final class CriteriaPattern {
         }
     }
 
-    public boolean hasError() {
+    boolean hasError() {
         return errorMessage != null;
     }
 
-    public RuntimeException exception(String keyText) {
+    RuntimeException exception(String keyText) {
         if (errorMessage != null) {
             return new IllegalArgumentException(errorMessage + " (text: '" + keyText + "')");
         }

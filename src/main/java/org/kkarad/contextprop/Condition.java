@@ -7,16 +7,16 @@ final class Condition {
     private final String domainKey;
     private final List<String> values;
 
-    public Condition(String domainKey, List<String> values) {
+    Condition(String domainKey, List<String> values) {
         this.domainKey = domainKey;
         this.values = values;
     }
 
-    public String domainKey() {
+    String domainKey() {
         return domainKey;
     }
 
-    public List<String> values() {
+    List<String> values() {
         return values;
     }
 

@@ -6,16 +6,16 @@ class Match implements Comparable<Match> {
 
     private final Context context;
 
-    public Match(int noOfKeys, Context context) {
+    Match(int noOfKeys, Context context) {
         this.noOfKeys = noOfKeys;
         this.context = context;
     }
 
-    public int noOfKeys() {
+    int noOfKeys() {
         return noOfKeys;
     }
 
-    public Context propertyContext() {
+    Context propertyContext() {
         return context;
     }
 

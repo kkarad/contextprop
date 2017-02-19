@@ -135,3 +135,4 @@ username    .CTXT      (env[prd],loc   [ldn,nyk,hkg])  =  kkarad
 
 - [x] create glossary section
 - [ ] update README.md with new naming
+- [ ] add preconditions to domain classes

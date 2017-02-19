@@ -8,7 +8,7 @@ final class PropertyResolver {
 
     private final DomainPredicates predicates;
 
-    public PropertyResolver(DomainPredicates predicates) {
+    PropertyResolver(DomainPredicates predicates) {
         this.predicates = predicates;
     }
 

@@ -7,27 +7,39 @@ final class ContextVisitor implements ParseVisitor {
 
     private final Map<String, ContextPropertyBuilder> propertyMap = new HashMap<>();
 
-    private final PropertyContextBuilder current = new PropertyContextBuilder();
+    private final Map<String,ContextBuilder> currentContexts = new HashMap<>();
 
     @Override
     public void startParse() {
         propertyMap.clear();
+        currentContexts.clear();
     }
 
     @Override
     public void startProperty(String key) {
-        propertyMap.putIfAbsent(key, new ContextPropertyBuilder(key));
-        current.reset();
+        currentContexts
+                .computeIfAbsent(key, propKey -> new ContextBuilder())
+                .reset();
     }
 
     @Override
-    public void propertyCriteria(String propertyKey, String criteriaKey, String[] criteriaValues) {
-        current.add(new Condition(criteriaKey, Arrays.asList(criteriaValues)));
+    public void propertyCondition(String propertyKey, String domainKey, String[] conditionValues) {
+        currentContexts
+                .get(propertyKey)
+                .add(new Condition(domainKey, Arrays.asList(conditionValues)));
     }
 
     @Override
     public void endProperty(String key, String value) {
-        propertyMap.get(key).add(current.build(value));
+        ContextPropertyBuilder builder = propertyMap.computeIfAbsent(key, ContextPropertyBuilder::new);
+        ContextBuilder current = currentContexts.get(key);
+
+        if (current.isEmpty()) {
+            builder.defaultValue(value);
+            return;
+        }
+
+        builder.add(current.build(value));
     }
 
     @Override
@@ -35,7 +47,7 @@ final class ContextVisitor implements ParseVisitor {
         //validate
     }
 
-    public Stream<ContextProperty> properties() {
+    Stream<ContextProperty> properties() {
         List<ContextProperty> properties = new ArrayList<>();
         for (ContextPropertyBuilder propertyBuilder : propertyMap.values()) {
             properties.add(propertyBuilder.build());
@@ -44,34 +56,48 @@ final class ContextVisitor implements ParseVisitor {
     }
 
     private static class ContextPropertyBuilder {
+
         private final String key;
 
-        public ContextPropertyBuilder(String key) {
+        private String defaultValue = null;
+
+        private List<Context> contexts = new ArrayList<>();
+
+        ContextPropertyBuilder(String key) {
             this.key = key;
         }
 
-        public void add(Context context) {
-
+        void add(Context context) {
+            contexts.add(context);
         }
 
-        public ContextProperty build() {
-            return new ContextProperty(key, null, null);
+        void defaultValue(String value) {
+            this.defaultValue = value;
+        }
+
+        ContextProperty build() {
+            return new ContextProperty(key, contexts, defaultValue);
         }
     }
 
-    private class PropertyContextBuilder {
+    private class ContextBuilder {
 
-        private final List<Condition> criteria = new ArrayList<>();
-        public void add(Condition condition) {
-            criteria.add(condition);
+        private final List<Condition> conditions = new ArrayList<>();
+
+        void add(Condition condition) {
+            conditions.add(condition);
         }
 
-        public Context build(String value) {
-            return new Context(criteria, value);
+        boolean isEmpty() {
+            return conditions.isEmpty();
         }
 
-        public void reset() {
+        Context build(String value) {
+            return new Context(conditions, value);
+        }
 
+        void reset() {
+            conditions.clear();
         }
     }
 }

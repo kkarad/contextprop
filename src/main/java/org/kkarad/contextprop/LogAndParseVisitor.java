@@ -8,7 +8,7 @@ final class LogAndParseVisitor implements ParseVisitor {
 
     private final ParseVisitor delegate;
 
-    public LogAndParseVisitor(boolean debug, ParseVisitor delegate) {
+    LogAndParseVisitor(boolean debug, ParseVisitor delegate) {
         this.debug = debug;
         this.delegate = delegate;
     }
@@ -22,22 +22,26 @@ final class LogAndParseVisitor implements ParseVisitor {
     @Override
     public void startProperty(String key) {
         log("ParseVisitor.startProperty -> key = [" + key + "]");
+        delegate.startProperty(key);
     }
 
     @Override
-    public void propertyCriteria(String propertyKey, String criteriaKey, String[] criteriaValues) {
-        log("ParseVisitor.propertyCriteria -> propertyKey = [" + propertyKey + "], criteriaKey = [" +
-                criteriaKey + "], criteriaValues = " + Arrays.toString(criteriaValues));
+    public void propertyCondition(String propertyKey, String domainKey, String[] conditionValues) {
+        log("ParseVisitor.propertyCondition -> propertyKey = [" + propertyKey + "], domainKey = [" +
+                domainKey + "], conditionValues = " + Arrays.toString(conditionValues));
+        delegate.propertyCondition(propertyKey, domainKey, conditionValues);
     }
 
     @Override
     public void endProperty(String key, String value) {
         log("ParseVisitor.endProperty -> key = [" + key + "], value = [" + value + "]");
+        delegate.endProperty(key, value);
     }
 
     @Override
     public void endParse() {
         log("ParseVisitor.endParse");
+        delegate.endParse();
     }
 
     private void log(String message) {

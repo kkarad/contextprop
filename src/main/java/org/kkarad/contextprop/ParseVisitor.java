@@ -5,7 +5,7 @@ interface ParseVisitor {
 
     void startProperty(String key);
 
-    void propertyCriteria(String propertyKey, String criteriaKey, String[] criteriaValues);
+    void propertyCondition(String propertyKey, String criteriaKey, String[] criteriaValues);
 
     void endProperty(String key, String value);
 

@@ -13,11 +13,11 @@ final class Context {
         this.propertyValue = propertyValue;
     }
 
-    public List<Condition> conditions() {
+    List<Condition> conditions() {
         return conditions;
     }
 
-    public String propertyValue() {
+    String propertyValue() {
         return propertyValue;
     }
 }

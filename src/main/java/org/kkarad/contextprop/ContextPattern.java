@@ -28,14 +28,14 @@ final class ContextPattern {
 
     private boolean endPatternFound = false;
 
-    public ContextPattern(String startOfPattern, char endOfPattern, CriteriaPattern criteriaPattern, ParseVisitor visitor) {
+    ContextPattern(String startOfPattern, char endOfPattern, CriteriaPattern criteriaPattern, ParseVisitor visitor) {
         this.startOfPattern = startOfPattern;
         this.endOfPattern = endOfPattern;
         this.criteriaPattern = criteriaPattern;
         this.visitor = visitor;
     }
 
-    public void startProperty(int textLength) {
+    void startProperty(int textLength) {
         bufferLength = textLength;
         bufferPosition = 0;
         setBuffer(bufferLength);
@@ -52,7 +52,7 @@ final class ContextPattern {
         Arrays.fill(buffer, '\u0000');
     }
 
-    public void traverse(char character) {
+    void traverse(char character) {
         try {
             buffer[bufferPosition] = character;
             updateState(character);
@@ -114,7 +114,7 @@ final class ContextPattern {
         return endOfLengthReached && (character == endOfPattern);
     }
 
-    public void endProperty(String propertyValue) {
+    void endProperty(String propertyValue) {
         if (startPatternFound && propertyKey == null) {
             errorMessage = format("Unable to recognise the '%s...%s' context pattern",
                     startOfPattern, Character.toString(endOfPattern));
@@ -132,13 +132,14 @@ final class ContextPattern {
             visitor.endProperty(propertyKey, propertyValue);
         }
 
+        visitor.endProperty(propertyKey, propertyValue);
     }
 
-    public boolean hasError() {
+    boolean hasError() {
         return errorMessage != null || criteriaPattern.hasError();
     }
 
-    public RuntimeException exception(String keyText) {
+    RuntimeException exception(String keyText) {
         if (errorMessage != null) {
             return new IllegalArgumentException(errorMessage + " (text:'" + keyText + "')");
         } else if (criteriaPattern.hasError()) {
@@ -147,7 +148,7 @@ final class ContextPattern {
         throw new IllegalStateException("Attempt to retrieve exception when no error exists");
     }
 
-    public String propertyKey() {
+    String propertyKey() {
         return propertyKey;
     }
 }
