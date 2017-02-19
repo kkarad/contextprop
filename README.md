@@ -117,3 +117,21 @@ property.name2.CTXT(hst[localhost])=true
 property.name.CTXT(env[prd],loc[ldn,nyk])=true
 property.name.CTXT(env[prd],loc[ldn,nyk,hkg])=false #invalid! location loh and nyk are overlapping
 ```
+
+## Glossary
+
+```
+                                  context
+                       .-------------^-------------.
+                        condition    condition
+                       .----^---..-------^---------.
+            context              domain  condition
+ property  identifier             key     value(s)         value
+.---^---.   .--^--.              .-^-. .-----^-----.      .--^--.
+username    .CTXT      (env[prd],loc   [ldn,nyk,hkg])  =  kkarad
+```
+
+## TODO
+
+- [x] create glossary section
+- [ ] update README.md with new naming
