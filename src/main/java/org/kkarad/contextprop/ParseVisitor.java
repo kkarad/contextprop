@@ -1,5 +1,7 @@
 package org.kkarad.contextprop;
 
+import java.util.Collection;
+
 interface ParseVisitor {
     void startParse();
 
@@ -10,4 +12,6 @@ interface ParseVisitor {
     void endProperty(String key, String value);
 
     void endParse();
+
+    Collection<ContextProperty> properties();
 }

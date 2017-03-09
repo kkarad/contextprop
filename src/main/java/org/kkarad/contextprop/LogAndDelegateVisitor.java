@@ -1,14 +1,16 @@
 package org.kkarad.contextprop;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.stream.Stream;
 
-final class LogAndParseVisitor implements ParseVisitor {
+final class LogAndDelegateVisitor implements ParseVisitor {
 
     private boolean debug;
 
     private final ParseVisitor delegate;
 
-    LogAndParseVisitor(boolean debug, ParseVisitor delegate) {
+    LogAndDelegateVisitor(boolean debug, ParseVisitor delegate) {
         this.debug = debug;
         this.delegate = delegate;
     }
@@ -48,5 +50,10 @@ final class LogAndParseVisitor implements ParseVisitor {
         if (debug) {
             System.out.println(message);
         }
+    }
+
+    @Override
+    public Collection<ContextProperty> properties() {
+        return delegate.properties();
     }
 }

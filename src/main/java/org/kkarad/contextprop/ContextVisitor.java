@@ -47,12 +47,13 @@ final class ContextVisitor implements ParseVisitor {
         //validate
     }
 
-    Stream<ContextProperty> properties() {
+    @Override
+    public Collection<ContextProperty> properties() {
         List<ContextProperty> properties = new ArrayList<>();
         for (ContextPropertyBuilder propertyBuilder : propertyMap.values()) {
             properties.add(propertyBuilder.build());
         }
-        return properties.stream();
+        return properties;
     }
 
     private static class ContextPropertyBuilder {
