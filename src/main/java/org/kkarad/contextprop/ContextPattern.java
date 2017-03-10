@@ -130,6 +130,7 @@ final class ContextPattern {
             propertyKey = new String(buffer, 0, bufferPosition);
             visitor.startProperty(propertyKey);
             visitor.endProperty(propertyKey, propertyValue);
+            return;
         }
 
         visitor.endProperty(propertyKey, propertyValue);

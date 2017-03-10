@@ -1,9 +1,8 @@
 package org.kkarad.contextprop;
 
 import java.util.*;
-import java.util.stream.Stream;
 
-final class ContextVisitor implements ParseVisitor {
+class ContextVisitor implements ParseVisitor {
 
     private final Map<String, ContextPropertyBuilder> propertyMap = new HashMap<>();
 

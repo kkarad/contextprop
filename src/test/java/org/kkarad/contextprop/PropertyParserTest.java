@@ -1,19 +1,16 @@
 package org.kkarad.contextprop;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
-import org.mockito.Mockito;
 
 import java.util.Collection;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 class PropertyParserTest {
 
@@ -23,7 +20,7 @@ class PropertyParserTest {
 
     @BeforeEach
     void setUp() {
-        visitor = mock(ParseVisitor.class);
+        visitor = spy(new ContextVisitor());
         contextPattern = new ContextPattern(
                 ".CTXT(",
                 ')',
@@ -71,4 +68,17 @@ class PropertyParserTest {
         });
 
     }
+
+    @Test
+    @DisplayName("Property with context identifier but empty context results in exception thrown during parsing")
+    void test3() {
+        Properties unresolved = new Properties();
+        unresolved.setProperty("my.property.CTXT()", "myValue");
+
+        Throwable throwable = assertThrows(IllegalArgumentException.class, () -> parser.parse(unresolved));
+        throwable.printStackTrace();
+
+    }
+
+    //criteria with empty []
 }
