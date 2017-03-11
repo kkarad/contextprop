@@ -6,7 +6,7 @@ import static java.lang.String.format;
 
 //                 0         1         2         3
 //                 0123456789012345678901234567890123
-//my.prop.key.CTXT[env(uat),loc(ldn),group(internal)]
+//my.prop.key.CTXT(env[uat],loc[ldn],group[internal])
 final class CriteriaPattern {
 
     private final char startOfPattern;
@@ -16,6 +16,7 @@ final class CriteriaPattern {
     private final String valueDelimiter;
 
     private final ParseVisitor visitor;
+
     private final char criteriaDelimiter;
 
     private int bufferLength = 1;
@@ -67,6 +68,7 @@ final class CriteriaPattern {
     private void resetCriteriaState(int position) {
         criteriaStartIndex = position;
         criteriaKey = null;
+        criteriaComplete = false;
         valueStartIndex = -1;
     }
 
@@ -80,13 +82,22 @@ final class CriteriaPattern {
     }
 
     private void updateState(char character) {
-        if (criteriaComplete && character == criteriaDelimiter) {
-            criteriaComplete = false;
-            resetCriteriaState(bufferPosition + 1);
+        if (criteriaComplete) {
+            onStartOfNextCriteria(character);
         } else if (character == startOfPattern) {
             onStartOfPattern();
         } else if (character == endOfPattern) {
             onEndOfPattern();
+        }
+    }
+
+    private void onStartOfNextCriteria(char character) {
+        if (character == criteriaDelimiter) {
+            resetCriteriaState(bufferPosition + 1);
+        } else {
+            String previousCriteria = new String(buffer, 0, bufferPosition);
+            errorMessage = format("Criteria should be delimited with '%s'. Expecting delimiter after '%s'",
+                    criteriaDelimiter, previousCriteria);
         }
     }
 
@@ -139,7 +150,7 @@ final class CriteriaPattern {
     void endContext() {
         if (!criteriaComplete) {
             String text = new String(buffer, criteriaStartIndex, bufferPosition - criteriaStartIndex);
-            errorMessage = format("Reached end of context of property key (%s) without recognising criteria from text: '%s'",
+            errorMessage = format("Reached end of context of property key (%s) without recognising criteria from '%s'",
                     propertyKey, text);
         }
     }
@@ -150,8 +161,13 @@ final class CriteriaPattern {
 
     RuntimeException exception(String keyText) {
         if (errorMessage != null) {
-            return new IllegalArgumentException(errorMessage + " (text: '" + keyText + "')");
+            return new ContextPropParseException(format("%s (" +
+                            "text: '%s', " +
+                            "start criteria pattern: '%s', " +
+                            "end criteria pattern: '%s')",
+                    errorMessage, keyText, startOfPattern, endOfPattern));
         }
+
         throw new IllegalStateException("Attempt to retrieve exception when no error exists");
     }
 }

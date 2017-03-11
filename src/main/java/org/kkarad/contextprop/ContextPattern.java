@@ -6,7 +6,9 @@ import static java.lang.String.format;
 
 final class ContextPattern {
 
-    private final String startOfPattern;
+    private final String contextIdentifier;
+
+    private final char startOfPattern;
 
     private final char endOfPattern;
 
@@ -22,13 +24,20 @@ final class ContextPattern {
 
     private String errorMessage = null;
 
-    private boolean startPatternFound = false;
+    private boolean contextIdentifierFound = false;
 
     private String propertyKey = null;
 
     private boolean endPatternFound = false;
 
-    ContextPattern(String startOfPattern, char endOfPattern, CriteriaPattern criteriaPattern, ParseVisitor visitor) {
+    private boolean startPatternFound = false;
+
+    ContextPattern(String contextIdentifier,
+                   char startOfPattern,
+                   char endOfPattern,
+                   CriteriaPattern criteriaPattern,
+                   ParseVisitor visitor) {
+        this.contextIdentifier = contextIdentifier;
         this.startOfPattern = startOfPattern;
         this.endOfPattern = endOfPattern;
         this.criteriaPattern = criteriaPattern;
@@ -40,7 +49,7 @@ final class ContextPattern {
         bufferPosition = 0;
         setBuffer(bufferLength);
         errorMessage = null;
-        startPatternFound = false;
+        contextIdentifierFound = false;
         propertyKey = null;
         endPatternFound = false;
     }
@@ -62,36 +71,54 @@ final class ContextPattern {
     }
 
     private void updateState(char character) {
-        boolean startPatternFoundNow = !startPatternFound && isStartOfPattern();
-        if (startPatternFoundNow && propertyKeyIsSet()) {
-            visitor.startProperty(propertyKey);
-            criteriaPattern.startContext(propertyKey, bufferLength - bufferPosition + 1);
+        if (!contextIdentifierFound) {
+            if (isContextIdentifierFound() && propertyKeyIsSet()) {
+                contextIdentifierFound = true;
+                visitor.startProperty(propertyKey);
+                criteriaPattern.startContext(propertyKey, bufferLength - bufferPosition + 1);
+            }
+            return;
         }
 
-        endPatternFound = startPatternFound && (endPatternFound || isEndOfPattern(character));
-
-        if (!startPatternFoundNow && startPatternFound && !endPatternFound) {
-            criteriaPattern.traverse(character);
+        if (!startPatternFound) {
+            if (isStartOfPattern(character)) {
+                startPatternFound = true;
+            } else {
+                errorMessage = format("Context should start with '%s'. Found '%s'", startOfPattern, character);
+            }
+            return;
         }
 
-        if (endPatternFound) {
-            criteriaPattern.endContext();
+        if (!endPatternFound) {
+            if (isEndOfPattern(character)) {
+                endPatternFound = true;
+                criteriaPattern.endContext();
+            } else if (isLastCharacter()) {
+                errorMessage = format("Context should end with '%s'. Found '%s'", endOfPattern, character);
+            } else {
+                criteriaPattern.traverse(character);
+            }
+        } else {
+            errorMessage = format("End pattern '%s' already reached", endOfPattern);
         }
     }
 
-    private boolean isStartOfPattern() {
-        if (bufferPosition >= startOfPattern.length() - 1) {
-            int offset = bufferPosition - (startOfPattern.length() - 1);
-            startPatternFound = findStartPattern(buffer, offset, startOfPattern);
-            return startPatternFound;
+    private boolean isLastCharacter() {
+        return bufferPosition == bufferLength - 1;
+    }
+
+    private boolean isContextIdentifierFound() {
+        if (bufferPosition >= contextIdentifier.length() - 1) {
+            int offset = bufferPosition - (contextIdentifier.length() - 1);
+            return findContextIdentifier(buffer, offset, contextIdentifier);
         }
 
         return false;
     }
 
-    private boolean findStartPattern(char[] buffer, int offset, String startOfPattern) {
-        for (int i = 0; i < startOfPattern.length(); i++) {
-            if (startOfPattern.charAt(i) != buffer[offset + i]) {
+    private boolean findContextIdentifier(char[] buffer, int offset, String contextIdentifier) {
+        for (int i = 0; i < contextIdentifier.length(); i++) {
+            if (contextIdentifier.charAt(i) != buffer[offset + i]) {
                 return false;
             }
         }
@@ -99,41 +126,51 @@ final class ContextPattern {
     }
 
     private boolean propertyKeyIsSet() {
-        final int count = bufferPosition - (startOfPattern.length() - 1);
+        final int count = bufferPosition - (contextIdentifier.length() - 1);
         if (count <= 0) {
-            errorMessage = format("Invalid property key. There is no property key before the '%s' context pattern",
-                    startOfPattern);
+            errorMessage = format("Invalid property key. There is no property key before the context identifier ('%s')",
+                    contextIdentifier);
             return false;
         }
-        propertyKey =  new String(buffer, 0, count);
+        propertyKey = new String(buffer, 0, count);
         return true;
     }
 
+    private boolean isStartOfPattern(char character) {
+        return character == startOfPattern;
+    }
+
     private boolean isEndOfPattern(char character) {
-        boolean endOfLengthReached = bufferPosition == bufferLength - 1;
-        return endOfLengthReached && (character == endOfPattern);
+        return character == endOfPattern;
     }
 
     void endProperty(String propertyValue) {
-        if (startPatternFound && propertyKey == null) {
-            errorMessage = format("Unable to recognise the '%s...%s' context pattern",
-                    startOfPattern, Character.toString(endOfPattern));
-            return;
-        }
-
-        if (startPatternFound && !endPatternFound) {
-            errorMessage = format("Property key doesn't end with the context end pattern '%s'", Character.toString(endOfPattern));
-            return;
-        }
-
-        if (!startPatternFound && !endPatternFound) {
+        //is a default property?
+        if (!contextIdentifierFound && !startPatternFound && !endPatternFound) {
             propertyKey = new String(buffer, 0, bufferPosition);
-            visitor.startProperty(propertyKey);
-            visitor.endProperty(propertyKey, propertyValue);
+            if (spellingMistakeExists(propertyKey)) {
+                errorMessage = "Found spelling mistake";
+            } else {
+                visitor.startProperty(propertyKey);
+                visitor.endProperty(propertyKey, propertyValue);
+            }
+            return;
+        }
+
+        if (contextIdentifierFound && !(startPatternFound && endPatternFound)) {
+            errorMessage = format("Context is not enclosed in '%s...%s'", startOfPattern, endOfPattern);
             return;
         }
 
         visitor.endProperty(propertyKey, propertyValue);
+    }
+
+    private boolean spellingMistakeExists(String propertyKey) {
+        return propertyKey.contains(contextIdentifier.substring(1)) ||
+                propertyKey.contains(contextIdentifier.substring(2)) ||
+                propertyKey.contains(contextIdentifier.substring(0, contextIdentifier.length() - 1)) ||
+                (propertyKey.contains(Character.toString(startOfPattern)) &&
+                        propertyKey.contains(Character.toString(endOfPattern)));
     }
 
     boolean hasError() {
@@ -142,7 +179,7 @@ final class ContextPattern {
 
     RuntimeException exception(String keyText) {
         if (errorMessage != null) {
-            return new IllegalArgumentException(errorMessage + " (text:'" + keyText + "')");
+            return new ContextPropParseException(errorMessage + " (text:'" + keyText + "')");
         } else if (criteriaPattern.hasError()) {
             return criteriaPattern.exception(keyText);
         }

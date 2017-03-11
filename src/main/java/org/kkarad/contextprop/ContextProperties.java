@@ -2,11 +2,12 @@ package org.kkarad.contextprop;
 
 import java.util.Collection;
 import java.util.Properties;
-import java.util.stream.Stream;
 
 public final class ContextProperties {
 
-    private static final String CONTEXT_START_PATTERN = ".CTXT(";
+    private static final String CONTEXT_IDENTIFIER = ".CTXT";
+
+    private static final char CONTEXT_START_PATTERN = '(';
 
     private static final char CONTEXT_END_PATTERN = ')';
 
@@ -30,6 +31,7 @@ public final class ContextProperties {
         PropertyParser propertyParser = new PropertyParser(
                 visitor,
                 new ContextPattern(
+                        CONTEXT_IDENTIFIER,
                         CONTEXT_START_PATTERN,
                         CONTEXT_END_PATTERN,
                         new CriteriaPattern(
