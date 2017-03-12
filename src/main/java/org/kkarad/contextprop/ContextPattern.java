@@ -12,7 +12,7 @@ final class ContextPattern {
 
     private final char endOfPattern;
 
-    private final CriteriaPattern criteriaPattern;
+    private final ConditionPattern conditionPattern;
 
     private final ParseVisitor visitor;
 
@@ -35,12 +35,12 @@ final class ContextPattern {
     ContextPattern(String contextIdentifier,
                    char startOfPattern,
                    char endOfPattern,
-                   CriteriaPattern criteriaPattern,
+                   ConditionPattern conditionPattern,
                    ParseVisitor visitor) {
         this.contextIdentifier = contextIdentifier;
         this.startOfPattern = startOfPattern;
         this.endOfPattern = endOfPattern;
-        this.criteriaPattern = criteriaPattern;
+        this.conditionPattern = conditionPattern;
         this.visitor = visitor;
     }
 
@@ -52,6 +52,7 @@ final class ContextPattern {
         contextIdentifierFound = false;
         propertyKey = null;
         endPatternFound = false;
+        startPatternFound = false;
     }
 
     private void setBuffer(int length) {
@@ -75,7 +76,7 @@ final class ContextPattern {
             if (isContextIdentifierFound() && propertyKeyIsSet()) {
                 contextIdentifierFound = true;
                 visitor.startProperty(propertyKey);
-                criteriaPattern.startContext(propertyKey, bufferLength - bufferPosition + 1);
+                conditionPattern.startContext(propertyKey, bufferLength - bufferPosition + 1);
             }
             return;
         }
@@ -92,11 +93,11 @@ final class ContextPattern {
         if (!endPatternFound) {
             if (isEndOfPattern(character)) {
                 endPatternFound = true;
-                criteriaPattern.endContext();
+                conditionPattern.endContext();
             } else if (isLastCharacter()) {
                 errorMessage = format("Context should end with '%s'. Found '%s'", endOfPattern, character);
             } else {
-                criteriaPattern.traverse(character);
+                conditionPattern.traverse(character);
             }
         } else {
             errorMessage = format("End pattern '%s' already reached", endOfPattern);
@@ -174,14 +175,14 @@ final class ContextPattern {
     }
 
     boolean hasError() {
-        return errorMessage != null || criteriaPattern.hasError();
+        return errorMessage != null || conditionPattern.hasError();
     }
 
     RuntimeException exception(String keyText) {
         if (errorMessage != null) {
             return new ContextPropParseException(errorMessage + " (text:'" + keyText + "')");
-        } else if (criteriaPattern.hasError()) {
-            return criteriaPattern.exception(keyText);
+        } else if (conditionPattern.hasError()) {
+            return conditionPattern.exception(keyText);
         }
         throw new IllegalStateException("Attempt to retrieve exception when no error exists");
     }

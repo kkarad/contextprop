@@ -1,13 +1,14 @@
 package org.kkarad.contextprop;
 
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 import static java.lang.String.format;
 
 //                 0         1         2         3
 //                 0123456789012345678901234567890123
 //my.prop.key.CTXT(env[uat],loc[ldn],group[internal])
-final class CriteriaPattern {
+final class ConditionPattern {
 
     private final char startOfPattern;
 
@@ -17,7 +18,7 @@ final class CriteriaPattern {
 
     private final ParseVisitor visitor;
 
-    private final char criteriaDelimiter;
+    private final char conditionDelimiter;
 
     private int bufferLength = 1;
 
@@ -27,27 +28,27 @@ final class CriteriaPattern {
 
     private String propertyKey;
 
-    private int criteriaStartIndex = -1;
+    private int conditionStartIndex = -1;
 
-    private String criteriaKey = null;
+    private String conditionKey = null;
 
     private int valueStartIndex = -1;
 
-    private boolean criteriaComplete = false;
+    private boolean conditionComplete = false;
 
     private String errorMessage = null;
 
-    CriteriaPattern(char startOfPattern, char endOfPattern, ParseVisitor visitor, String valueDelimiter, char criteriaDelimiter) {
+    ConditionPattern(char startOfPattern, char endOfPattern, ParseVisitor visitor, String valueDelimiter, char conditionDelimiter) {
         this.startOfPattern = startOfPattern;
         this.endOfPattern = endOfPattern;
         this.visitor = visitor;
-        this.valueDelimiter = valueDelimiter;
-        this.criteriaDelimiter = criteriaDelimiter;
+        this.valueDelimiter = Pattern.quote(valueDelimiter);
+        this.conditionDelimiter = conditionDelimiter;
     }
 
     void startContext(String propertyKey, int textLength) {
         resetContextState(propertyKey, textLength);
-        resetCriteriaState(0);
+        resetConditionState(0);
         errorMessage = null;
     }
 
@@ -65,10 +66,10 @@ final class CriteriaPattern {
         Arrays.fill(buffer, '\u0000');
     }
 
-    private void resetCriteriaState(int position) {
-        criteriaStartIndex = position;
-        criteriaKey = null;
-        criteriaComplete = false;
+    private void resetConditionState(int position) {
+        conditionStartIndex = position;
+        conditionKey = null;
+        conditionComplete = false;
         valueStartIndex = -1;
     }
 
@@ -82,8 +83,8 @@ final class CriteriaPattern {
     }
 
     private void updateState(char character) {
-        if (criteriaComplete) {
-            onStartOfNextCriteria(character);
+        if (conditionComplete) {
+            onStartOfNextCondition(character);
         } else if (character == startOfPattern) {
             onStartOfPattern();
         } else if (character == endOfPattern) {
@@ -91,55 +92,55 @@ final class CriteriaPattern {
         }
     }
 
-    private void onStartOfNextCriteria(char character) {
-        if (character == criteriaDelimiter) {
-            resetCriteriaState(bufferPosition + 1);
+    private void onStartOfNextCondition(char character) {
+        if (character == conditionDelimiter) {
+            resetConditionState(bufferPosition + 1);
         } else {
-            String previousCriteria = new String(buffer, 0, bufferPosition);
-            errorMessage = format("Criteria should be delimited with '%s'. Expecting delimiter after '%s'",
-                    criteriaDelimiter, previousCriteria);
+            String previousCondition = new String(buffer, 0, bufferPosition);
+            errorMessage = format("Condition should be delimited with '%s'. Expecting delimiter after '%s'",
+                    conditionDelimiter, previousCondition);
         }
     }
 
     private void onStartOfPattern() {
-        int count = bufferPosition - criteriaStartIndex;
+        int count = bufferPosition - conditionStartIndex;
         if (count <= 0) {
-            errorMessage = format("There is no criteria key before the '%s' criteria start pattern", startOfPattern);
+            errorMessage = format("There is no condition key before the '%s' condition start pattern", startOfPattern);
             return;
         }
 
-        criteriaKey = new String(buffer, criteriaStartIndex, count);
+        conditionKey = new String(buffer, conditionStartIndex, count);
 
         valueStartIndex = bufferPosition + 1;
         if (valueStartIndex == bufferLength) {
-            errorMessage = format("End of text reached without recognising values for criteria key: '%s'", criteriaKey);
+            errorMessage = format("End of text reached without recognising values for condition key: '%s'", conditionKey);
         }
     }
 
     private void onEndOfPattern() {
-        if (criteriaKey == null) {
-            errorMessage = format("Reached end of criteria end pattern '%s' without recognising the criteria key", endOfPattern);
+        if (conditionKey == null) {
+            errorMessage = format("Reached end of condition end pattern '%s' without recognising the condition key", endOfPattern);
             return;
         }
 
         int count = bufferPosition - valueStartIndex;
         if (count <= 0) {
-            errorMessage = format("No values found for criteria key: '%s'", criteriaKey);
+            errorMessage = format("No values found for condition key: '%s'", conditionKey);
             return;
         }
 
         String valueText = new String(buffer, valueStartIndex, count);
         String[] values = valueText.split(valueDelimiter);
-        if (validate(criteriaKey, values)) {
-            visitor.propertyCondition(propertyKey, criteriaKey, values);
-            criteriaComplete = true;
+        if (validate(conditionKey, values)) {
+            visitor.propertyCondition(propertyKey, conditionKey, values);
+            conditionComplete = true;
         }
     }
 
-    private boolean validate(String criteriaKey, String[] values) {
+    private boolean validate(String conditionKey, String[] values) {
         for (String value : values) {
             if (value.isEmpty()) {
-                errorMessage = format("Invalid value ('%s') assigned to criteria key: '%s'", value, criteriaKey);
+                errorMessage = format("Invalid value ('%s') assigned to condition key: '%s'", value, conditionKey);
                 return false;
             }
         }
@@ -148,9 +149,9 @@ final class CriteriaPattern {
     }
 
     void endContext() {
-        if (!criteriaComplete) {
-            String text = new String(buffer, criteriaStartIndex, bufferPosition - criteriaStartIndex);
-            errorMessage = format("Reached end of context of property key (%s) without recognising criteria from '%s'",
+        if (!conditionComplete) {
+            String text = new String(buffer, conditionStartIndex, bufferPosition - conditionStartIndex);
+            errorMessage = format("Reached end of context of property key (%s) without recognising condition from '%s'",
                     propertyKey, text);
         }
     }
@@ -163,8 +164,8 @@ final class CriteriaPattern {
         if (errorMessage != null) {
             return new ContextPropParseException(format("%s (" +
                             "text: '%s', " +
-                            "start criteria pattern: '%s', " +
-                            "end criteria pattern: '%s')",
+                            "start condition pattern: '%s', " +
+                            "end condition pattern: '%s')",
                     errorMessage, keyText, startOfPattern, endOfPattern));
         }
 

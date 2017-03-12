@@ -7,8 +7,7 @@ import org.kkarad.contextprop.DomainPredicates;
 
 import java.util.Properties;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class ApiTest {
 
@@ -38,28 +37,8 @@ public class ApiTest {
                 .requiresDefault(false)
                 .resolve(ctxProperties);
 
-        assertEquals("myValue", properties.getProperty("my.prop.key"));
+        assertThat(properties.getProperty("my.prop.key")).isEqualTo("myValue");
     }
 
-    @Test
-    void syntax_fails() {
-        Properties ctxProperties = new Properties();
-        ctxProperties.setProperty("", "myValue");
-
-        DomainPredicates predicates = DomainPredicates.basedOnDomain(MyDomain.class)
-                .predicate("env", "uat")
-                .predicate("loc", "ldn")
-                .predicate("group", "internal")
-                .predicate("app", "whatsapp")
-                .predicate("host", "localhost")
-                .predicate("user", "kkarad")
-                .create();
-
-        Properties properties = ContextProperties.create(predicates)
-                .requiresDefault(false)
-                .resolve(ctxProperties);
-
-        fail("");
-
-    }
+    //example with condition value list
 }

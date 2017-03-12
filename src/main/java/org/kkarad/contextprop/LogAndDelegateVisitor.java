@@ -2,9 +2,8 @@ package org.kkarad.contextprop;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.stream.Stream;
 
-final class LogAndDelegateVisitor implements ParseVisitor {
+class LogAndDelegateVisitor implements ParseVisitor {
 
     private boolean debug;
 

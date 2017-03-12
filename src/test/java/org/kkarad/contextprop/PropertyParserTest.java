@@ -20,17 +20,17 @@ class PropertyParserTest {
 
     @BeforeEach
     void setUp() {
-        visitor = spy(new ContextVisitor());
+        visitor = spy(new LogAndDelegateVisitor(true, new ContextVisitor()));
 
         ContextPattern contextPattern = new ContextPattern(
                 ".CTXT",
                 '(',
                 ')',
-                new CriteriaPattern(
+                new ConditionPattern(
                         '[',
                         ']',
                         visitor,
-                        ",",
+                        "|",
                         ','),
                 visitor);
 
@@ -51,7 +51,7 @@ class PropertyParserTest {
     }
 
     @Test
-    @DisplayName("Property without the context identifier results to a ContextProperty with no criteria and default value")
+    @DisplayName("Property without the context identifier results to a ContextProperty with no condition and default value")
     void test2() {
         Properties unresolved = new Properties();
         String expectedDefaultValue = "myValue";
@@ -83,7 +83,7 @@ class PropertyParserTest {
     }
 
     @Test
-    @DisplayName("Property context with empty criteria results in exception thrown during parsing")
+    @DisplayName("Property context with empty conditions results in exception thrown during parsing")
     void test4() {
         Properties unresolved = new Properties();
         unresolved.setProperty("my.property.CTXT(env[])", "myValue");
@@ -93,7 +93,7 @@ class PropertyParserTest {
     }
 
     @Test
-    @DisplayName("Property context with wrong criteria start and end pattern results in exception thrown during parsing")
+    @DisplayName("Property context with wrong conditions start and end pattern results in exception thrown during parsing")
     void test5() {
         Properties unresolved = new Properties();
         unresolved.setProperty("my.property.CTXT(env(dev))", "myValue");
@@ -103,7 +103,7 @@ class PropertyParserTest {
     }
 
     @Test
-    @DisplayName("Property context with 2nd criteria having wrong start and end pattern results in exception thrown during parsing")
+    @DisplayName("Property context with 2nd conditions having wrong start and end pattern results in exception thrown during parsing")
     void test6() {
         Properties unresolved = new Properties();
         unresolved.setProperty("my.property.CTXT(env[dev],location[hkg))", "myValue");
@@ -113,7 +113,7 @@ class PropertyParserTest {
     }
 
     @Test
-    @DisplayName("Property context without criteria delimiter results in exception thrown during parsing")
+    @DisplayName("Property context without condition delimiter results in exception thrown during parsing")
     void test7() {
         Properties unresolved = new Properties();
         unresolved.setProperty("my.property.CTXT(env[dev]location[hkg])", "myValue");
@@ -167,5 +167,55 @@ class PropertyParserTest {
                     Throwable throwable = assertThrows(ContextPropParseException.class, () -> parser.parse(unresolved));
                     System.out.println(throwable.getMessage());
                 }));
+    }
+
+    @Test
+    @DisplayName("parses correctly property context with multiple conditions and condition with value list")
+    void test12() {
+        Properties unresolved = new Properties();
+        String expectedValue = "myValue";
+        unresolved.setProperty("my.property.key.CTXT(env[test],host[localhost],location[gr|uk|it|us])", expectedValue);
+        String expectedDefaultValue = "defaultValue";
+        unresolved.setProperty("my.property.key", expectedDefaultValue);
+
+        Collection<ContextProperty> resolved = parser.parse(unresolved);
+        assertThat(resolved).hasOnlyOneElementSatisfying(ctxProp -> {
+            assertThat(ctxProp.key()).isEqualTo("my.property.key");
+            assertThat(ctxProp.contexts()).hasOnlyOneElementSatisfying(ctx -> {
+                assertThat(ctx.propertyValue()).isEqualTo(expectedValue);
+                assertThat(ctx.conditions()).hasSize(3);
+                assertThat(ctx.conditions())
+                        .filteredOn(condition -> condition.domainKey().equals("env"))
+                        .hasOnlyOneElementSatisfying(condition -> {
+                            assertThat(condition.values()).containsExactly("test");
+                        });
+                assertThat(ctx.conditions())
+                        .filteredOn(condition -> condition.domainKey().equals("host"))
+                        .hasOnlyOneElementSatisfying(condition -> {
+                            assertThat(condition.values()).containsExactly("localhost");
+                        });
+                assertThat(ctx.conditions())
+                        .filteredOn(condition -> condition.domainKey().equals("location"))
+                        .hasOnlyOneElementSatisfying(condition -> {
+                            assertThat(condition.values()).containsExactly("gr", "uk", "it", "us");
+                        });
+            });
+            assertThat(ctxProp.defaultValue()).isEqualTo(expectedDefaultValue);
+        });
+    }
+
+
+    @Test
+    @DisplayName("Incorrect condition value delimiter results in to one condition value")
+    void test13() {
+        Properties unresolved = new Properties();
+        unresolved.setProperty("my.property.key.CTXT(location[gr,uk,it,us])", "myValue");
+
+        Collection<ContextProperty> resolved = parser.parse(unresolved);
+        assertThat(resolved)
+                .flatExtracting(ContextProperty::contexts)
+                .flatExtracting(Context::conditions)
+                .hasOnlyOneElementSatisfying(condition ->
+                        assertThat(condition.values()).containsExactly("gr,uk,it,us"));
     }
 }

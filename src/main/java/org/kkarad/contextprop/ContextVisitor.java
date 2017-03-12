@@ -2,11 +2,13 @@ package org.kkarad.contextprop;
 
 import java.util.*;
 
+import static java.util.Arrays.asList;
+
 class ContextVisitor implements ParseVisitor {
 
     private final Map<String, ContextPropertyBuilder> propertyMap = new HashMap<>();
 
-    private final Map<String,ContextBuilder> currentContexts = new HashMap<>();
+    private final Map<String, ContextBuilder> currentContexts = new HashMap<>();
 
     @Override
     public void startParse() {
@@ -25,7 +27,7 @@ class ContextVisitor implements ParseVisitor {
     public void propertyCondition(String propertyKey, String domainKey, String[] conditionValues) {
         currentContexts
                 .get(propertyKey)
-                .add(new Condition(domainKey, Arrays.asList(conditionValues)));
+                .add(new Condition(domainKey, asList(conditionValues)));
     }
 
     @Override
@@ -93,7 +95,7 @@ class ContextVisitor implements ParseVisitor {
         }
 
         Context build(String value) {
-            return new Context(conditions, value);
+            return new Context(new ArrayList<>(conditions), value);
         }
 
         void reset() {

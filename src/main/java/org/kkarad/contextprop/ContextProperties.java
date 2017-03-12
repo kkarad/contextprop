@@ -11,13 +11,13 @@ public final class ContextProperties {
 
     private static final char CONTEXT_END_PATTERN = ')';
 
-    private static final char CRITERIA_VALUE_START_PATTERN = '[';
+    private static final char CONDITION_VALUE_START_PATTERN = '[';
 
-    private static final char CRITERIA_VALUE_END_PATTERN = ']';
+    private static final char CONDITION_VALUE_END_PATTERN = ']';
 
-    private static final char CRITERIA_DELIMITER = ',';
+    private static final char CONDITION_DELIMITER = ',';
 
-    private static final String CRITERIA_VALUE_DELIMITER = ",";
+    private static final String CONDITION_VALUE_DELIMITER = ",";
 
     private final PropertyParser propertyParser;
 
@@ -34,12 +34,12 @@ public final class ContextProperties {
                         CONTEXT_IDENTIFIER,
                         CONTEXT_START_PATTERN,
                         CONTEXT_END_PATTERN,
-                        new CriteriaPattern(
-                                CRITERIA_VALUE_START_PATTERN,
-                                CRITERIA_VALUE_END_PATTERN,
+                        new ConditionPattern(
+                                CONDITION_VALUE_START_PATTERN,
+                                CONDITION_VALUE_END_PATTERN,
                                 visitor,
-                                CRITERIA_VALUE_DELIMITER,
-                                CRITERIA_DELIMITER),
+                                CONDITION_VALUE_DELIMITER,
+                                CONDITION_DELIMITER),
                         visitor));
         return new ContextProperties(predicates, propertyParser);
     }
