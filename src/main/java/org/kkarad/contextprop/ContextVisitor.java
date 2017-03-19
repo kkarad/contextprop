@@ -2,6 +2,7 @@ package org.kkarad.contextprop;
 
 import java.util.*;
 
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 
 class ContextVisitor implements ParseVisitor {
@@ -25,9 +26,20 @@ class ContextVisitor implements ParseVisitor {
 
     @Override
     public void propertyCondition(String propertyKey, String domainKey, String[] conditionValues) {
+        List<String> valueList = asList(conditionValues);
+
+        if (duplicatesExist(valueList)) {
+            throw new ContextPropParseException(format("Duplicate values found in '%s' condition of '%s'",
+                    domainKey, propertyKey));
+        }
         currentContexts
                 .get(propertyKey)
-                .add(new Condition(domainKey, asList(conditionValues)));
+                .add(new Condition(domainKey, valueList));
+    }
+
+    private boolean duplicatesExist(List<String> valueList) {
+        HashSet<String> uniqueValueList = new HashSet<>(valueList);
+        return uniqueValueList.size() != valueList.size();
     }
 
     @Override

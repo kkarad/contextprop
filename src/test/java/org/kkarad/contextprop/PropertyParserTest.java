@@ -41,7 +41,7 @@ class PropertyParserTest {
 
     @Test
     @DisplayName("An empty size of Properties results to an empty collection of ContextProperty")
-    void test1() {
+    void anEmptySizeOfPropertiesResultsToAnEmptyCollectionOfContextProperty() {
         Collection<ContextProperty> ctxProperties = parser.parse(new Properties());
         assertThat(ctxProperties).isEmpty();
 
@@ -52,7 +52,7 @@ class PropertyParserTest {
 
     @Test
     @DisplayName("Property without the context identifier results to a ContextProperty with no condition and default value")
-    void test2() {
+    void propertyWithoutTheContextIdentifierResultsToAContextPropertyWithNoConditionAndDefaultValue() {
         Properties unresolved = new Properties();
         String expectedDefaultValue = "myValue";
         String expectedKey = "my.property";
@@ -74,7 +74,7 @@ class PropertyParserTest {
 
     @Test
     @DisplayName("Property with context identifier but empty context results in exception thrown during parsing")
-    void test3() {
+    void propertyWithContextIdentifierButEmptyContextResultsInExceptionThrownDuringParsing() {
         Properties unresolved = new Properties();
         unresolved.setProperty("my.property.CTXT()", "myValue");
 
@@ -84,7 +84,7 @@ class PropertyParserTest {
 
     @Test
     @DisplayName("Property context with empty conditions results in exception thrown during parsing")
-    void test4() {
+    void propertyContextWithEmptyConditionsResultsInExceptionThrownDuringParsing() {
         Properties unresolved = new Properties();
         unresolved.setProperty("my.property.CTXT(env[])", "myValue");
 
@@ -94,7 +94,7 @@ class PropertyParserTest {
 
     @Test
     @DisplayName("Property context with wrong conditions start and end pattern results in exception thrown during parsing")
-    void test5() {
+    void propertyContextWithWrongConditionsStartAndEndPatternResultsInExceptionThrownDuringParsing() {
         Properties unresolved = new Properties();
         unresolved.setProperty("my.property.CTXT(env(dev))", "myValue");
 
@@ -104,7 +104,7 @@ class PropertyParserTest {
 
     @Test
     @DisplayName("Property context with 2nd conditions having wrong start and end pattern results in exception thrown during parsing")
-    void test6() {
+    void propertyContextWith2NdConditionsHavingWrongStartAndEndPatternResultsInExceptionThrownDuringParsing() {
         Properties unresolved = new Properties();
         unresolved.setProperty("my.property.CTXT(env[dev],location[hkg))", "myValue");
 
@@ -114,7 +114,7 @@ class PropertyParserTest {
 
     @Test
     @DisplayName("Property context without condition delimiter results in exception thrown during parsing")
-    void test7() {
+    void propertyContextWithoutConditionDelimiterResultsInExceptionThrownDuringParsing() {
         Properties unresolved = new Properties();
         unresolved.setProperty("my.property.CTXT(env[dev]location[hkg])", "myValue");
 
@@ -124,7 +124,7 @@ class PropertyParserTest {
 
     @Test
     @DisplayName("Property context with wrong start pattern results in exception thrown during parsing")
-    void test8() {
+    void propertyContextWithWrongStartPatternResultsInExceptionThrownDuringParsing() {
         Properties unresolved = new Properties();
         unresolved.setProperty("my.property.CTXT{env[])", "myValue");
 
@@ -134,7 +134,7 @@ class PropertyParserTest {
 
     @Test
     @DisplayName("Property context with wrong end pattern results in exception thrown during parsing")
-    void test9() {
+    void propertyContextWithWrongEndPatternResultsInExceptionThrownDuringParsing() {
         Properties unresolved = new Properties();
         unresolved.setProperty("my.property.CTXT(env[test]}", "myValue");
 
@@ -144,7 +144,7 @@ class PropertyParserTest {
 
     @Test
     @DisplayName("When there is no property key before the context identifier throw exception")
-    void test10() {
+    void whenThereIsNoPropertyKeyBeforeTheContextIdentifierThrowException() {
         Properties unresolved = new Properties();
         unresolved.setProperty(".CTXT(env[test])", "myValue");
 
@@ -154,7 +154,7 @@ class PropertyParserTest {
 
     @TestFactory
     @DisplayName("Parser identifies spelling mistakes and missing characters")
-    Stream<DynamicTest> test11() {
+    Stream<DynamicTest> parserIdentifiesSpellingMistakesAndMissingCharacters() {
         return Stream.of(
                 "my.property.keyCTXT(env[test])",
                 "my.property.key(env[test])",
@@ -171,7 +171,7 @@ class PropertyParserTest {
 
     @Test
     @DisplayName("parses correctly property context with multiple conditions and condition with value list")
-    void test12() {
+    void parsesCorrectlyPropertyContextWithMultipleConditionsAndConditionWithValueList() {
         Properties unresolved = new Properties();
         String expectedValue = "myValue";
         unresolved.setProperty("my.property.key.CTXT(env[test],host[localhost],location[gr|uk|it|us])", expectedValue);
@@ -207,7 +207,7 @@ class PropertyParserTest {
 
     @Test
     @DisplayName("Incorrect condition value delimiter results in to one condition value")
-    void test13() {
+    void incorrectConditionValueDelimiterResultsInToOneConditionValue() {
         Properties unresolved = new Properties();
         unresolved.setProperty("my.property.key.CTXT(location[gr,uk,it,us])", "myValue");
 
@@ -217,5 +217,16 @@ class PropertyParserTest {
                 .flatExtracting(Context::conditions)
                 .hasOnlyOneElementSatisfying(condition ->
                         assertThat(condition.values()).containsExactly("gr,uk,it,us"));
+    }
+
+    @Test
+    @DisplayName("Abort parsing when condition value list has duplicates")
+    void abortParsingWhenConditionValueListHasDuplicates() {
+        Properties unresolved = new Properties();
+        unresolved.setProperty("my.property.key.CTXT(location[uk|uk|it])", "myValue");
+
+        assertThrows(ContextPropParseException.class, () -> {
+            parser.parse(unresolved);
+        });
     }
 }

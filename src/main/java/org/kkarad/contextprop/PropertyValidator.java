@@ -1,6 +1,9 @@
 package org.kkarad.contextprop;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 import static java.lang.String.format;
 
@@ -9,60 +12,70 @@ final class PropertyValidator {
     private final boolean requiresDefault;
 
     PropertyValidator(Domain domain, boolean requiresDefault) {
-
         this.domain = domain;
         this.requiresDefault = requiresDefault;
     }
 
-    void validate(ContextProperty property) {
-        validateConditionKeys(property);
-        if (requiresDefault) {
-            validateDefaultRequirement(property);
-        }
-        validateConditionOrder(property);
-        validateConditionScope(property);
+    Optional<Error> validate(ContextProperty property) {
+        return findFirst(
+                () -> validateConditionKeys(property),
+                () -> validateDefaultRequirement(property),
+                () -> validateConditionOrder(property),
+                () -> validateConditionScope(property));
     }
 
-    private void validateConditionKeys(ContextProperty property) {
-        String propertyKey = property.key();
-        property.contexts()
+    @SafeVarargs
+    private final Optional<Error> findFirst(Supplier<Optional<Error>>... validators) {
+        return Arrays.stream(validators)
+                .map(Supplier::get)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .findFirst();
+    }
+
+    private Optional<Error> validateConditionKeys(ContextProperty property) {
+        Optional<String> invalidConditionKey = property.contexts()
                 .stream()
                 .flatMap(ctxCondition -> ctxCondition.conditions().stream())
                 .map(Condition::domainKey)
-                .forEach(conditionKey -> {
-                    if (!domain.contains(conditionKey)) {
-                        throw invalidConditionKey(propertyKey, conditionKey);
-                    }
-                });
+                .filter(conditionKey -> !domain.contains(conditionKey))
+                .findFirst();
+
+        return invalidConditionKey
+                .map(conditionKey -> invalidConditionKey(property.key(), conditionKey));
     }
 
-    private IllegalArgumentException invalidConditionKey(String propertyKey, String conditionKey) {
+    private Error invalidConditionKey(String propertyKey, String conditionKey) {
         String msg = format("Unrecognised condition key: '%s' in property: '%s'", conditionKey, propertyKey);
-        return new IllegalArgumentException(msg);
+        return new Error(msg);
     }
 
-    private void validateDefaultRequirement(ContextProperty property) {
-        if (property.defaultValue() == null) {
-            throw missingDefaultProperty(property.key());
-        }
+    private Optional<Error> validateDefaultRequirement(ContextProperty property) {
+        if (requiresDefault) return Optional.empty();
+
+        return property.defaultValue() == null
+                ? Optional.of(missingDefaultProperty(property.key()))
+                : Optional.empty();
     }
 
-    private IllegalArgumentException missingDefaultProperty(String propertyKey) {
-        return new IllegalArgumentException(format("default context is missing from property: '%s'", propertyKey));
+    private Error missingDefaultProperty(String propertyKey) {
+        return new Error(format("default context is missing from property: '%s'", propertyKey));
     }
 
-    private void validateConditionOrder(ContextProperty property) {
+    private Optional<Error> validateConditionOrder(ContextProperty property) {
         for (String ctxKey : domain.orderedKeys()) {
             if (contextKeyExists(property, ctxKey)) {
                 for (Context ctxCondition : property.contexts()) {
                     if (contextKeyMissingFrom(ctxKey, ctxCondition) &&
                             lowerOrderContextKeyExists(ctxKey, ctxCondition)) {
                         String ctxConditionAsString = toString(ctxCondition);
-                        throw missingHighOrderContextKey(ctxKey, property.key(), ctxConditionAsString);
+                        return Optional.of(missingHighOrderContextKey(ctxKey, property.key(), ctxConditionAsString));
                     }
                 }
             }
         }
+
+        return Optional.empty();
     }
 
     private boolean contextKeyExists(ContextProperty property, String ctxKey) {
@@ -128,15 +141,16 @@ final class PropertyValidator {
         }
     }
 
-    private IllegalArgumentException missingHighOrderContextKey(String ctxKey,
-                                                                String propertyKey,
-                                                                String ctxCondition) {
-        String msg = String.format("High order context key: '%s' is missing from property: '%s' with context: '%s'",
+    private Error missingHighOrderContextKey(String ctxKey,
+                                             String propertyKey,
+                                             String ctxCondition) {
+        String msg = format("High order context key: '%s' is missing from property: '%s' with context: '%s'",
                 ctxKey, propertyKey, ctxCondition);
-        return new IllegalArgumentException(msg);
+        return new Error(msg);
     }
 
-    private void validateConditionScope(ContextProperty property) {
+    private Optional<Error> validateConditionScope(ContextProperty property) {
         //TODO
+        return Optional.empty();
     }
 }
