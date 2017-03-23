@@ -3,9 +3,12 @@ package org.kkarad.contextprop;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import static java.lang.String.format;
+import static java.util.Collections.disjoint;
+import static org.kkarad.contextprop.Error.Type.*;
 
 final class PropertyValidator {
     private final Domain domain;
@@ -18,10 +21,10 @@ final class PropertyValidator {
 
     Optional<Error> validate(ContextProperty property) {
         return findFirst(
-                () -> validateConditionKeys(property),
+                () -> validateDomainKeys(property),
                 () -> validateDefaultRequirement(property),
                 () -> validateConditionOrder(property),
-                () -> validateConditionScope(property));
+                () -> validateContextScope(property));
     }
 
     @SafeVarargs
@@ -33,43 +36,44 @@ final class PropertyValidator {
                 .findFirst();
     }
 
-    private Optional<Error> validateConditionKeys(ContextProperty property) {
-        Optional<String> invalidConditionKey = property.contexts()
+    private Optional<Error> validateDomainKeys(ContextProperty property) {
+        Optional<String> invalidDomainKey = property.contexts()
                 .stream()
-                .flatMap(ctxCondition -> ctxCondition.conditions().stream())
+                .flatMap(context -> context.conditions().stream())
                 .map(Condition::domainKey)
-                .filter(conditionKey -> !domain.contains(conditionKey))
+                .filter(key -> !domain.contains(key))
                 .findFirst();
 
-        return invalidConditionKey
-                .map(conditionKey -> invalidConditionKey(property.key(), conditionKey));
+        return invalidDomainKey
+                .map(domainKey -> invalidDomainError(property.key(), domainKey));
     }
 
-    private Error invalidConditionKey(String propertyKey, String conditionKey) {
-        String msg = format("Unrecognised condition key: '%s' in property: '%s'", conditionKey, propertyKey);
-        return new Error(msg);
+    private Error invalidDomainError(String propertyKey, String domainKey) {
+        String msg = format("Unrecognised domain key: '%s' in property: '%s'", domainKey, propertyKey);
+        return new Error(msg, INVALID_DOMAIN);
     }
 
     private Optional<Error> validateDefaultRequirement(ContextProperty property) {
-        if (requiresDefault) return Optional.empty();
+        if (!requiresDefault) return Optional.empty();
 
         return property.defaultValue() == null
-                ? Optional.of(missingDefaultProperty(property.key()))
+                ? Optional.of(missingDefaultPropertyError(property.key()))
                 : Optional.empty();
     }
 
-    private Error missingDefaultProperty(String propertyKey) {
-        return new Error(format("default context is missing from property: '%s'", propertyKey));
+    private Error missingDefaultPropertyError(String propertyKey) {
+        return new Error(format("default context is missing from property: '%s'", propertyKey), MISSING_DEFAULT);
     }
 
     private Optional<Error> validateConditionOrder(ContextProperty property) {
-        for (String ctxKey : domain.orderedKeys()) {
-            if (contextKeyExists(property, ctxKey)) {
-                for (Context ctxCondition : property.contexts()) {
-                    if (contextKeyMissingFrom(ctxKey, ctxCondition) &&
-                            lowerOrderContextKeyExists(ctxKey, ctxCondition)) {
-                        String ctxConditionAsString = toString(ctxCondition);
-                        return Optional.of(missingHighOrderContextKey(ctxKey, property.key(), ctxConditionAsString));
+        for (String domainKey : domain.orderedKeys()) {
+            if (domainKeyExists(property, domainKey)) {
+                for (Context context : property.contexts()) {
+                    if (!context.containsCondition(domainKey) &&
+                            lowerOrderDomainKeyExists(context, domainKey)) {
+                        return Optional.of(missingHighOrderDomainKeyError(
+                                domainKey, property.key(),
+                                context.toStringOrderBy(domain.orderedKeys())));
                     }
                 }
             }
@@ -78,32 +82,22 @@ final class PropertyValidator {
         return Optional.empty();
     }
 
-    private boolean contextKeyExists(ContextProperty property, String ctxKey) {
-        for (Context ctxCondition : property.contexts()) {
-            for (Condition condition : ctxCondition.conditions()) {
-                if (condition.domainKey().equals(ctxKey)) {
-                    return true;
-                }
+    private boolean domainKeyExists(ContextProperty property, String domainKey) {
+        for (Context context : property.contexts()) {
+            if (context.containsCondition(domainKey)) {
+                return true;
             }
         }
+
         return false;
     }
 
-    private boolean contextKeyMissingFrom(String ctxKey, Context ctxCondition) {
-        for (Condition condition : ctxCondition.conditions()) {
-            if (condition.domainKey().equals(ctxKey)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean lowerOrderContextKeyExists(String ctxKey, Context ctxCondition) {
-        int indexOfHighOrderKey = domain.orderedKeys().indexOf(ctxKey);
+    private boolean lowerOrderDomainKeyExists(Context context, String domainKey) {
+        int indexOfHighOrderKey = domain.orderedKeys().indexOf(domainKey);
         List<String> lowOrderKeys = domain.orderedKeys()
                 .subList(indexOfHighOrderKey, domain.orderedKeys().size() - 1);
 
-        for (Condition condition : ctxCondition.conditions()) {
+        for (Condition condition : context.conditions()) {
             if (lowOrderKeys.contains(condition.domainKey())) {
                 return true;
             }
@@ -111,46 +105,42 @@ final class PropertyValidator {
         return false;
     }
 
-    private String toString(Context ctxCondition) {
-        StringBuilder b = new StringBuilder();
-        for (String ctxKey : domain.orderedKeys()) {
-            Condition condition = findCondition(ctxKey, ctxCondition);
-            if (condition != null) {
-                b.append(b.length() != 0 ? "," : "");
-                b.append(condition.domainKey()).append("(");
-                appendValues(b, condition.values());
-                b.append(")");
+    private Error missingHighOrderDomainKeyError(String domainKey,
+                                                 String propertyKey,
+                                                 String context) {
+        String msg = format("High order domain key: '%s' is missing from property: '%s' with context: '%s'",
+                domainKey, propertyKey, context);
+        return new Error(msg, CONDITION_ORDER_VIOLATION);
+    }
+
+    private Optional<Error> validateContextScope(ContextProperty property) {
+        for (Context thisCtx : property.contexts()) {
+            for (Context thatCtx : property.contexts()) {
+                if (thisCtx != thatCtx && thisCtx.equalDomain(thatCtx) && contextConflictExists(thisCtx, thatCtx)) {
+                    return Optional.of(contextScopeConflictError(thisCtx, thatCtx));
+                }
             }
         }
-        return b.toString();
-    }
-
-    private Condition findCondition(String ctxKey, Context ctxCondition) {
-        for (Condition condition : ctxCondition.conditions()) {
-            if (condition.domainKey().equals(ctxKey)) {
-                return condition;
-            }
-        }
-        return null;
-    }
-
-    private void appendValues(StringBuilder b, List<String> values) {
-        int offset = b.length();
-        for (String value : values) {
-            b.append(b.length() != offset ? "," : "").append(value);
-        }
-    }
-
-    private Error missingHighOrderContextKey(String ctxKey,
-                                             String propertyKey,
-                                             String ctxCondition) {
-        String msg = format("High order context key: '%s' is missing from property: '%s' with context: '%s'",
-                ctxKey, propertyKey, ctxCondition);
-        return new Error(msg);
-    }
-
-    private Optional<Error> validateConditionScope(ContextProperty property) {
-        //TODO
         return Optional.empty();
+    }
+
+    private boolean contextConflictExists(Context thisCtx, Context thatCtx) {
+        for (Condition thisCondition : thisCtx.conditions()) {
+            Set<String> thisValues = thisCondition.values();
+            Set<String> thatValues = thatCtx.condition(thisCondition.domainKey()).values();
+            boolean commonValueExists = !disjoint(thisValues, thatValues);
+            if (commonValueExists) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Error contextScopeConflictError(Context thisCtx, Context thatCtx) {
+        String msg = format("Context scope conflict exists (contexts with the same domain keys cannot" +
+                        " have common condition values) between contexts: %s, %s",
+                thisCtx.toStringOrderBy(domain.orderedKeys()),
+                thatCtx.toStringOrderBy(domain.orderedKeys()));
+        return new Error(msg, CONTEXT_SCOPE_CONFLICT);
     }
 }

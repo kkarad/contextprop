@@ -31,14 +31,13 @@ final class PropertyResolver {
     private int findMatches(Context context, DomainPredicates predicates) {
         int matches = 0;
         for (Condition condition : context.conditions()) {
-            String contextValue = predicates.value(condition.domainKey());
-            Objects.requireNonNull(contextValue, "Unknown context key: " + condition.domainKey());
-            if (!condition.values().contains(contextValue)) {
-                return -1;
+            String domainPredicate = predicates.value(condition.domainKey());
+            Objects.requireNonNull(domainPredicate, "Unknown domain key: " + condition.domainKey());
+            if (!condition.containsValue(domainPredicate)) {
+                return 0;
             }
             matches++;
         }
         return matches;
     }
-
 }

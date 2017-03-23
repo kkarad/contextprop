@@ -104,7 +104,7 @@ class PropertyParserTest {
 
     @Test
     @DisplayName("Property context with 2nd conditions having wrong start and end pattern results in exception thrown during parsing")
-    void propertyContextWith2NdConditionsHavingWrongStartAndEndPatternResultsInExceptionThrownDuringParsing() {
+    void propertyContextWith2ndConditionsHavingWrongStartAndEndPatternResultsInExceptionThrownDuringParsing() {
         Properties unresolved = new Properties();
         unresolved.setProperty("my.property.CTXT(env[dev],location[hkg))", "myValue");
 
@@ -187,23 +187,22 @@ class PropertyParserTest {
                 assertThat(ctx.conditions())
                         .filteredOn(condition -> condition.domainKey().equals("env"))
                         .hasOnlyOneElementSatisfying(condition -> {
-                            assertThat(condition.values()).containsExactly("test");
+                            assertThat(condition.values()).containsExactlyInAnyOrder("test");
                         });
                 assertThat(ctx.conditions())
                         .filteredOn(condition -> condition.domainKey().equals("host"))
                         .hasOnlyOneElementSatisfying(condition -> {
-                            assertThat(condition.values()).containsExactly("localhost");
+                            assertThat(condition.values()).containsExactlyInAnyOrder("localhost");
                         });
                 assertThat(ctx.conditions())
                         .filteredOn(condition -> condition.domainKey().equals("location"))
                         .hasOnlyOneElementSatisfying(condition -> {
-                            assertThat(condition.values()).containsExactly("gr", "uk", "it", "us");
+                            assertThat(condition.values()).containsExactlyInAnyOrder("gr", "uk", "it", "us");
                         });
             });
             assertThat(ctxProp.defaultValue()).isEqualTo(expectedDefaultValue);
         });
     }
-
 
     @Test
     @DisplayName("Incorrect condition value delimiter results in to one condition value")
@@ -225,8 +224,15 @@ class PropertyParserTest {
         Properties unresolved = new Properties();
         unresolved.setProperty("my.property.key.CTXT(location[uk|uk|it])", "myValue");
 
-        assertThrows(ContextPropParseException.class, () -> {
-            parser.parse(unresolved);
-        });
+        assertThrows(ContextPropParseException.class, () -> parser.parse(unresolved));
+    }
+
+    @Test
+    @DisplayName("Abort parsing when context has duplicate conditions")
+    void abortParsingWhenContextHasDuplicateConditions() {
+        Properties unresolved = new Properties();
+        unresolved.setProperty("my.property.key.CTXT(location[uk|it],location[us])", "myValue");
+
+        assertThrows(ContextPropParseException.class, () -> parser.parse(unresolved));
     }
 }

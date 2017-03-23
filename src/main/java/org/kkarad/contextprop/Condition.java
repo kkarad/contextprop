@@ -1,13 +1,13 @@
 package org.kkarad.contextprop;
 
-import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 final class Condition {
     private final String domainKey;
-    private final List<String> values;
+    private final Set<String> values;
 
-    Condition(String domainKey, List<String> values) {
+    Condition(String domainKey, Set<String> values) {
         this.domainKey = domainKey;
         this.values = values;
     }
@@ -16,8 +16,12 @@ final class Condition {
         return domainKey;
     }
 
-    List<String> values() {
+    Set<String> values() {
         return values;
+    }
+
+    boolean containsValue(String value) {
+        return values.contains(value);
     }
 
     @Override

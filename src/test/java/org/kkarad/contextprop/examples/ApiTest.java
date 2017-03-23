@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ApiTest {
 
     @SuppressWarnings("unused")
-    enum MyDomain {
+    public enum MyDomain {
         env, loc, group, app, host, user
     }
 

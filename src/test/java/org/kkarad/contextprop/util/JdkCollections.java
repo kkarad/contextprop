@@ -1,11 +1,11 @@
-package org.kkarad.contextprop;
+package org.kkarad.contextprop.util;
 
 import java.util.HashSet;
 import java.util.Set;
 
 import static java.util.Arrays.asList;
 
-interface JdkCollections {
+public interface JdkCollections {
 
     @SafeVarargs
     static <T> Set<T> asSet(T... items) {

@@ -3,13 +3,12 @@ package org.kkarad.contextprop;
 import java.util.*;
 
 import static java.lang.String.format;
-import static java.util.Arrays.asList;
 
 class ContextVisitor implements ParseVisitor {
 
-    private final Map<String, ContextPropertyBuilder> propertyMap = new HashMap<>();
+    private final Map<String, ContextProperty.Builder> propertyMap = new HashMap<>();
 
-    private final Map<String, ContextBuilder> currentContexts = new HashMap<>();
+    private final Map<String, Context.Builder> currentContexts = new HashMap<>();
 
     @Override
     public void startParse() {
@@ -20,39 +19,40 @@ class ContextVisitor implements ParseVisitor {
     @Override
     public void startProperty(String key) {
         currentContexts
-                .computeIfAbsent(key, propKey -> new ContextBuilder())
+                .computeIfAbsent(key, propKey -> Context.Builder.context())
                 .reset();
     }
 
     @Override
     public void propertyCondition(String propertyKey, String domainKey, String[] conditionValues) {
-        List<String> valueList = asList(conditionValues);
+        HashSet<String> valueSet = new HashSet<>(conditionValues.length);
+        Collections.addAll(valueSet, conditionValues);
 
-        if (duplicatesExist(valueList)) {
+        if (conditionValues.length != valueSet.size()) {
             throw new ContextPropParseException(format("Duplicate values found in '%s' condition of '%s'",
                     domainKey, propertyKey));
         }
-        currentContexts
-                .get(propertyKey)
-                .add(new Condition(domainKey, valueList));
-    }
 
-    private boolean duplicatesExist(List<String> valueList) {
-        HashSet<String> uniqueValueList = new HashSet<>(valueList);
-        return uniqueValueList.size() != valueList.size();
+        Context.Builder builder = currentContexts.get(propertyKey);
+        if (builder.containsCondition(domainKey)) {
+            throw new ContextPropParseException(format("Duplicate condition for domain key '%s' found in property '%s'",
+                    domainKey, propertyKey));
+        }
+
+        builder.condition(domainKey, valueSet);
     }
 
     @Override
     public void endProperty(String key, String value) {
-        ContextPropertyBuilder builder = propertyMap.computeIfAbsent(key, ContextPropertyBuilder::new);
-        ContextBuilder current = currentContexts.get(key);
+        ContextProperty.Builder builder = propertyMap.computeIfAbsent(key, ContextProperty.Builder::contextProperty);
+        Context.Builder current = currentContexts.get(key);
 
         if (current.isEmpty()) {
             builder.defaultValue(value);
             return;
         }
 
-        builder.add(current.build(value));
+        builder.add(current.getWithValue(value));
     }
 
     @Override
@@ -63,55 +63,10 @@ class ContextVisitor implements ParseVisitor {
     @Override
     public Collection<ContextProperty> properties() {
         List<ContextProperty> properties = new ArrayList<>();
-        for (ContextPropertyBuilder propertyBuilder : propertyMap.values()) {
-            properties.add(propertyBuilder.build());
+        for (ContextProperty.Builder propertyBuilder : propertyMap.values()) {
+            properties.add(propertyBuilder.get());
         }
         return properties;
     }
 
-    private static class ContextPropertyBuilder {
-
-        private final String key;
-
-        private String defaultValue = null;
-
-        private List<Context> contexts = new ArrayList<>();
-
-        ContextPropertyBuilder(String key) {
-            this.key = key;
-        }
-
-        void add(Context context) {
-            contexts.add(context);
-        }
-
-        void defaultValue(String value) {
-            this.defaultValue = value;
-        }
-
-        ContextProperty build() {
-            return new ContextProperty(key, contexts, defaultValue);
-        }
-    }
-
-    private class ContextBuilder {
-
-        private final List<Condition> conditions = new ArrayList<>();
-
-        void add(Condition condition) {
-            conditions.add(condition);
-        }
-
-        boolean isEmpty() {
-            return conditions.isEmpty();
-        }
-
-        Context build(String value) {
-            return new Context(new ArrayList<>(conditions), value);
-        }
-
-        void reset() {
-            conditions.clear();
-        }
-    }
 }
