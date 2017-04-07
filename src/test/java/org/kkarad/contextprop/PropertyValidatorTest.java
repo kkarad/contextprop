@@ -8,9 +8,9 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.kkarad.contextprop.Context.Builder.context;
-import static org.kkarad.contextprop.ContextProperty.Builder.contextProperty;
 import static org.kkarad.contextprop.Error.Type.*;
-import static org.kkarad.contextprop.util.JdkCollections.asSet;
+import static org.kkarad.contextprop.JdkCollections.asSet;
+import static org.kkarad.contextprop.TestBuilders.aContextProperty;
 
 class PropertyValidatorTest {
 
@@ -21,13 +21,10 @@ class PropertyValidatorTest {
         env, loc, user
     }
 
-    private ContextProperty.Builder aContextProperty;
-
     private PropertyValidator validator;
 
     @BeforeEach
     void setUp() {
-        aContextProperty = contextProperty("my.property.key");
 
         domainPredicates = DomainPredicates.basedOnDomain(MyDomain.class)
                 .predicate("env", "test")
@@ -38,11 +35,10 @@ class PropertyValidatorTest {
         validator = new PropertyValidator(domainPredicates.domain(), false);
     }
 
-    //TODO validateConditionKeys
     @Test
     @DisplayName("Context property with unknown condition key fails validation")
     void contextPropertyWithUnknownConditionKeyFailsValidation() {
-        ContextProperty contextProperty = aContextProperty
+        ContextProperty contextProperty = aContextProperty()
                 .add(context()
                         .condition("app", "whatsapp")
                         .getWithValue("myValue"))
@@ -60,7 +56,7 @@ class PropertyValidatorTest {
     void whenDefaultPropertyIsRequiredAContextPropertyWithoutDefaultValueFailsValidation() {
         validator = new PropertyValidator(domainPredicates.domain(), true);
 
-        ContextProperty contextProperty = aContextProperty
+        ContextProperty contextProperty = aContextProperty()
                 .add(context()
                         .condition("env", "test")
                         .getWithValue("myValue"))
@@ -76,7 +72,7 @@ class PropertyValidatorTest {
     @Test
     @DisplayName("When default property is not required a context property without default value does not fail validation")
     void name() {
-        ContextProperty contextProperty = aContextProperty
+        ContextProperty contextProperty = aContextProperty()
                 .add(context()
                         .condition("env", "test")
                         .getWithValue("myValue"))
@@ -90,7 +86,7 @@ class PropertyValidatorTest {
     @Test
     @DisplayName("ContextProperties with entries which do not declare conditions declared by other entries fail validation")
     void contextPropertiesWithEntriesWhichDoNotDeclareConditionsDeclaredByOtherEntriesFailValidation() {
-        ContextProperty contextProperty = aContextProperty
+        ContextProperty contextProperty = aContextProperty()
                 .add(context()
                         .condition("env", "test")
                         .getWithValue("value1"))
@@ -104,8 +100,7 @@ class PropertyValidatorTest {
         assertThat(validation).isPresent().hasValueSatisfying(error ->
                 assertThat(error.type()).isEqualTo(CONDITION_ORDER_VIOLATION));
 
-
-        contextProperty = aContextProperty
+        contextProperty = aContextProperty()
                 .add(context()
                         .condition("env", "test")
                         .condition("user", "george")
@@ -125,14 +120,14 @@ class PropertyValidatorTest {
     @Test
     @DisplayName("Context properties with entries of which scope overlap fail validation")
     void contextPropertiesWithEntriesOfWhichScopeOverlapFailValidation() {
-        ContextProperty contextProperty = aContextProperty
+        ContextProperty contextProperty = aContextProperty()
                 .add(context()
                         .condition("env", "test")
                         .condition("loc", "home")
                         .getWithValue("value1"))
                 .add(context()
-                        .condition("env", "test")
-                        .condition("loc", asSet("home", "work", "gym"))
+                        .condition("env", "real")
+                        .condition("loc", asSet("home", "work", "gym")) //home is already defined
                         .getWithValue("value2"))
                 .get();
 

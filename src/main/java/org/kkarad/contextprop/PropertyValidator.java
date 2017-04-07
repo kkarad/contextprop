@@ -1,7 +1,6 @@
 package org.kkarad.contextprop;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -69,8 +68,7 @@ final class PropertyValidator {
         for (String domainKey : domain.orderedKeys()) {
             if (domainKeyExists(property, domainKey)) {
                 for (Context context : property.contexts()) {
-                    if (!context.containsCondition(domainKey) &&
-                            lowerOrderDomainKeyExists(context, domainKey)) {
+                    if (!context.containsCondition(domainKey)) {
                         return Optional.of(missingHighOrderDomainKeyError(
                                 domainKey, property.key(),
                                 context.toStringOrderBy(domain.orderedKeys())));
@@ -89,19 +87,6 @@ final class PropertyValidator {
             }
         }
 
-        return false;
-    }
-
-    private boolean lowerOrderDomainKeyExists(Context context, String domainKey) {
-        int indexOfHighOrderKey = domain.orderedKeys().indexOf(domainKey);
-        List<String> lowOrderKeys = domain.orderedKeys()
-                .subList(indexOfHighOrderKey, domain.orderedKeys().size() - 1);
-
-        for (Condition condition : context.conditions()) {
-            if (lowOrderKeys.contains(condition.domainKey())) {
-                return true;
-            }
-        }
         return false;
     }
 

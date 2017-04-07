@@ -9,7 +9,7 @@ import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ApiTest {
+class ApiTest {
 
     @SuppressWarnings("unused")
     public enum MyDomain {

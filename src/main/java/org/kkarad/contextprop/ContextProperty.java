@@ -29,6 +29,21 @@ final class ContextProperty {
         return defaultValue;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder b = new StringBuilder();
+        b.append(key);
+        b.append('(');
+        if (defaultValue != null) {
+            b.append("[]=").append(defaultValue).append(!contexts.isEmpty() ? "," : "");
+        }
+        if (!contexts.isEmpty()) {
+            b.append(contexts);
+        }
+        b.append(')');
+        return b.toString();
+    }
+
     static class Builder {
 
         private final String key;

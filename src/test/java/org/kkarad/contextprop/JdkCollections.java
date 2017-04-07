@@ -1,4 +1,4 @@
-package org.kkarad.contextprop.util;
+package org.kkarad.contextprop;
 
 import java.util.HashSet;
 import java.util.Set;

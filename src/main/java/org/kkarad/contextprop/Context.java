@@ -58,6 +58,11 @@ final class Context {
         }
     }
 
+    @Override
+    public String toString() {
+        return conditions.values() + "=" + propertyValue;
+    }
+
     static class Builder {
 
         private final Map<String, Condition> conditions = new HashMap<>();

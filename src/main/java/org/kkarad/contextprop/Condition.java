@@ -37,4 +37,9 @@ final class Condition {
     public int hashCode() {
         return Objects.hash(domainKey, values);
     }
+
+    @Override
+    public String toString() {
+        return domainKey + "=" + values;
+    }
 }
