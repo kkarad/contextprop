@@ -4,11 +4,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.kkarad</groupId>
-    <artifactId>context-prop</artifactId>
+    <groupId>com.github.kkarad</groupId>
+    <artifactId>contextprop</artifactId>
     <version>1.0-SNAPSHOT</version>
 
-    <name>context-prop</name>
+    <name>contextprop</name>
     <description>
         Consolidate copies of java properties configuration files (based on environment, region, etc)
         into one easy to maintain configuration file
