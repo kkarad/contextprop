@@ -35,6 +35,9 @@ class ApiTest {
 
         Properties properties = ContextProperties.create(predicates)
                 .requiresDefault(false)
+                .debugParser(System.out::println)
+                .debugResolver(System.out::println)
+                .logResolution((property, value, isLast) -> System.out.format("%s -> %s", property, value))
                 .resolve(ctxProperties);
 
         assertThat(properties.getProperty("my.prop.key")).isEqualTo("myValue");

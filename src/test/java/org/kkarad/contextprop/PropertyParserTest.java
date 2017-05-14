@@ -20,7 +20,8 @@ class PropertyParserTest {
 
     @BeforeEach
     void setUp() {
-        visitor = spy(new LogAndDelegateVisitor(true, new ContextVisitor()));
+        visitor = spy(new LogAndDelegateVisitor((msg) -> {
+        }, new ContextVisitor()));
 
         ContextPattern contextPattern = new ContextPattern(
                 ".CTXT",

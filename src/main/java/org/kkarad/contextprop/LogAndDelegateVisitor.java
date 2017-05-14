@@ -2,15 +2,16 @@ package org.kkarad.contextprop;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.function.Consumer;
 
 class LogAndDelegateVisitor implements ParseVisitor {
 
-    private boolean debug;
+    private final Consumer<String> debugMsgParser;
 
     private final ParseVisitor delegate;
 
-    LogAndDelegateVisitor(boolean debug, ParseVisitor delegate) {
-        this.debug = debug;
+    LogAndDelegateVisitor(Consumer<String> debugMsgParser, ParseVisitor delegate) {
+        this.debugMsgParser = debugMsgParser;
         this.delegate = delegate;
     }
 
@@ -46,9 +47,7 @@ class LogAndDelegateVisitor implements ParseVisitor {
     }
 
     private void log(String message) {
-        if (debug) {
-            System.out.println(message);
-        }
+        debugMsgParser.accept(message);
     }
 
     @Override
