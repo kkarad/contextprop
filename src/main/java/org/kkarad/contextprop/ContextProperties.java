@@ -47,21 +47,28 @@ public final class ContextProperties {
 
         private boolean requiresDefault = false;
 
+        private boolean systemPropertyOverride = false;
+
         private Consumer<String> debugMsgParser = msg -> {
         };
 
         private Consumer<String> debugMsgResolver = msg -> {
         };
 
-        private LogConsumer resolutionLogger = (property, value, isLast) -> {
+        private LogConsumer resolutionLogger = (property, systemOverridden, value, isLast) -> {
         };
 
         private Builder(DomainPredicates predicates) {
             this.predicates = predicates;
         }
 
-        public ContextProperties.Builder requiresDefault(boolean requiresDefault) {
-            this.requiresDefault = requiresDefault;
+        public ContextProperties.Builder requiresDefault() {
+            this.requiresDefault = true;
+            return this;
+        }
+
+        public Builder allowSystemPropertyOverride() {
+            systemPropertyOverride = true;
             return this;
         }
 
@@ -100,6 +107,8 @@ public final class ContextProperties {
             ContextPropertyResolver propertyResolver = new ContextPropertyResolver(
                     new PropertyValidator(predicates.domain(), requiresDefault),
                     new PropertyResolver(predicates, debugMsgResolver),
+                    systemPropertyOverride,
+                    debugMsgResolver,
                     resolutionLogger);
 
             return new ContextProperties(propertyParser, propertyResolver);
@@ -112,6 +121,6 @@ public final class ContextProperties {
 
     @FunctionalInterface
     public interface LogConsumer {
-        void log(String property, String value, boolean isLast);
+        void log(String property, boolean systemOverride, String value, boolean isLast);
     }
 }

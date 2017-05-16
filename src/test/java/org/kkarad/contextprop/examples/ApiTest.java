@@ -19,10 +19,12 @@ class ApiTest {
     @Test
     @DisplayName("Basic usage")
     void basic_usage() {
-
         Properties ctxProperties = new Properties();
         ctxProperties.setProperty("my.prop.key.CTXT(env[uat],loc[ldn,nyk],group[internal],app[whatsapp],host[localhost],user[kkarad])", "myValue");
         ctxProperties.setProperty("my.prop.key", "defaultValue");
+        ctxProperties.setProperty("my.prop.to.be.overridden", "value");
+
+        System.setProperty("my.prop.to.be.overridden", "overriddenValue");
 
         DomainPredicates predicates = DomainPredicates.basedOnDomain(MyDomain.class)
                 .predicate("env", "uat")
@@ -34,14 +36,14 @@ class ApiTest {
                 .create();
 
         Properties properties = ContextProperties.create(predicates)
-                .requiresDefault(false)
+                .requiresDefault()
+                .allowSystemPropertyOverride()
                 .debugParser(System.out::println)
                 .debugResolver(System.out::println)
-                .logResolution((property, value, isLast) -> System.out.format("%s -> %s", property, value))
+                .logResolution((property, overridden, value, isLast) ->
+                        System.out.format("(%s) %s -> %s", overridden ? "sys " : "prop", property, value))
                 .resolve(ctxProperties);
 
         assertThat(properties.getProperty("my.prop.key")).isEqualTo("myValue");
     }
-
-    //example with condition value list
 }

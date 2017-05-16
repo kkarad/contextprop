@@ -19,7 +19,7 @@ final class PropertyResolver {
     }
 
     String resolve(ContextProperty property) {
-        debugMsgResolver.accept(format("PropertyResolver.startResolve -> %s", property.key()));
+        String value;
         List<Match> matches = new ArrayList<>();
         for (Context context : property.contexts()) {
             int noOfMatchedKeys = findMatches(context, predicates);
@@ -30,11 +30,15 @@ final class PropertyResolver {
 
         matches.sort((left, right) -> right.noOfKeys() - left.noOfKeys());
 
-        String value = matches.isEmpty()
-                ? property.defaultValue() :
-                matches.iterator().next().propertyContext().propertyValue();
-
-        debugMsgResolver.accept(format("PropertyResolver.endResolve -> %s", property.key()));
+        if (matches.isEmpty()) {
+            value = property.defaultValue();
+            debugMsgResolver.accept(format("PropertyResolver.resolve -> property '%s' resolved to default value '%s'", property.key(), value));
+        } else {
+            Context context = matches.iterator().next().propertyContext();
+            value = context.propertyValue();
+            debugMsgResolver.accept(format("PropertyResolver.resolve -> property '%s' resolved to '%s' based on context (%s)",
+                    property.key(), value, context));
+        }
         return value;
     }
 
@@ -50,6 +54,7 @@ final class PropertyResolver {
             debugMsgResolver.accept(format("PropertyResolver.findMatch -> condition (%s) matches with context (%s)", condition, context));
             matches++;
         }
+        debugMsgResolver.accept(format("PropertyResolver.findMatch -> context (%s) matched %s times", context, matches));
         return matches;
     }
 }
