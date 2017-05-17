@@ -76,7 +76,7 @@ public final class TypedProperties {
         return properties.getProperty(property);
     }
 
-    private boolean isNullOrEmpty(String value) {
+    static boolean isNullOrEmpty(String value) {
         return value == null || value.isEmpty();
     }
 }

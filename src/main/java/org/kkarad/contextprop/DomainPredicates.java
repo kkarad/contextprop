@@ -30,11 +30,11 @@ public final class DomainPredicates {
         this.predicates = predicates;
     }
 
-    public Domain domain() {
+    Domain domain() {
         return domain;
     }
 
-    public String value(String key) {
+    String value(String key) {
         return predicates.get(key);
     }
 
@@ -65,6 +65,11 @@ public final class DomainPredicates {
                 throw new IllegalArgumentException(msg);
             }
             return new DomainPredicates(domain, predicates);
+        }
+
+        @Override
+        public String toString() {
+            return predicates.toString();
         }
     }
 }
