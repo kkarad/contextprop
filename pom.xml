@@ -4,7 +4,7 @@
 
     <groupId>com.github.kkarad</groupId>
     <artifactId>contextprop</artifactId>
-    <version>0.4-SNAPSHOT</version>
+    <version>0.4</version>
 
     <name>contextprop</name>
     <description>
@@ -34,7 +34,7 @@
         <connection>scm:git:https://github.com/kkarad/contextprop.git</connection>
         <developerConnection>scm:git:https://github.com/kkarad/contextprop.git</developerConnection>
         <url>https://github.com/kkarad/contextprop.git</url>
-      <tag>HEAD</tag>
+      <tag>contextprop-0.4</tag>
   </scm>
 
     <distributionManagement>
