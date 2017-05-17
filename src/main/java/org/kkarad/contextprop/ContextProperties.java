@@ -26,7 +26,15 @@ public final class ContextProperties {
     }
 
     public String resolveString(String property, DomainPredicates predicates) {
-        return propertyResolver.resolve(ctxProperties.get(property), predicates);
+        return propertyResolver.resolve(findProperty(property), predicates);
+    }
+
+    private ContextProperty findProperty(String property) {
+        ContextProperty contextProperty = ctxProperties.get(property);
+        if (contextProperty == null) {
+            throw new PropertyNotFoundException(property);
+        }
+        return contextProperty;
     }
 
     public static final class Resolver extends AbstractBuilder<Resolver> {
