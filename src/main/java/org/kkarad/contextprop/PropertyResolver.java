@@ -9,16 +9,13 @@ import static java.lang.String.format;
 
 final class PropertyResolver {
 
-    private final DomainPredicates predicates;
-
     private final Consumer<String> debugMsgResolver;
 
-    PropertyResolver(DomainPredicates predicates, Consumer<String> debugMsgResolver) {
-        this.predicates = predicates;
+    PropertyResolver(Consumer<String> debugMsgResolver) {
         this.debugMsgResolver = debugMsgResolver;
     }
 
-    String resolve(ContextProperty property) {
+    String resolve(ContextProperty property, DomainPredicates predicates) {
         String value;
         List<Match> matches = new ArrayList<>();
         for (Context context : property.contexts()) {

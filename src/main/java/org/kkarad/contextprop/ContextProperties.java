@@ -2,125 +2,75 @@ package org.kkarad.contextprop;
 
 import java.util.Collection;
 import java.util.Properties;
-import java.util.function.Consumer;
+import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 public final class ContextProperties {
 
-    private static final String CONTEXT_IDENTIFIER = ".CTXT";
-
-    private static final char CONTEXT_START_PATTERN = '(';
-
-    private static final char CONTEXT_END_PATTERN = ')';
-
-    private static final char CONDITION_VALUE_START_PATTERN = '[';
-
-    private static final char CONDITION_VALUE_END_PATTERN = ']';
-
-    private static final char CONDITION_DELIMITER = ',';
-
-    private static final String CONDITION_VALUE_DELIMITER = ",";
-
-    private final PropertyParser propertyParser;
+    private final ConcurrentMap<String, ContextProperty> ctxProperties;
 
     private final ContextPropertyResolver propertyResolver;
 
-    public ContextProperties(PropertyParser propertyParser, ContextPropertyResolver propertyResolver) {
-        this.propertyParser = propertyParser;
+    public static Resolver basedOn(DomainPredicates predicates) {
+        return new Resolver(predicates);
+    }
+
+    public static <E extends Enum> Builder basedOnDomain(Class<E> domainClass) {
+        return new Builder(Domain.create(domainClass));
+    }
+
+    private ContextProperties(ConcurrentMap<String, ContextProperty> ctxProperties,
+                              ContextPropertyResolver propertyResolver) {
+        this.ctxProperties = ctxProperties;
         this.propertyResolver = propertyResolver;
     }
 
-    public static ContextProperties.Builder create(DomainPredicates predicates) {
-        return new Builder(predicates);
+    public String resolveString(String property, DomainPredicates predicates) {
+        return propertyResolver.resolve(ctxProperties.get(property), predicates);
     }
 
-    public Properties resolve(Properties unresolved) {
-        Collection<ContextProperty> contextualisedProperties = propertyParser.parse(unresolved);
-
-        Properties resolved = new Properties();
-        propertyResolver.resolve(contextualisedProperties, resolved);
-        return resolved;
-    }
-
-    public static class Builder {
+    public static final class Resolver extends AbstractBuilder<Resolver> {
 
         private final DomainPredicates predicates;
 
-        private boolean requiresDefault = false;
-
-        private boolean systemPropertyOverride = false;
-
-        private Consumer<String> debugMsgParser = msg -> {
-        };
-
-        private Consumer<String> debugMsgResolver = msg -> {
-        };
-
-        private LogConsumer resolutionLogger = (property, systemOverridden, value, isLast) -> {
-        };
-
-        private Builder(DomainPredicates predicates) {
+        private Resolver(DomainPredicates predicates) {
             this.predicates = predicates;
         }
 
-        public ContextProperties.Builder requiresDefault() {
-            this.requiresDefault = true;
-            return this;
+        public Properties resolve(Properties ctxProperties) {
+            Properties resolved = new Properties();
+            Collection<ContextProperty> contextProperties = createParser().parse(ctxProperties);
+            PropertyValidator validator = createValidator(predicates.domain());
+            contextProperties.forEach(validator::validate);
+            createResolver().resolve(contextProperties, predicates, resolved);
+            return resolved;
         }
 
-        public Builder allowSystemPropertyOverride() {
-            systemPropertyOverride = true;
-            return this;
-        }
-
-        public ContextProperties.Builder debugParser(Consumer<String> debugMsgConsumer) {
-            this.debugMsgParser = debugMsgConsumer;
-            return this;
-        }
-
-        public ContextProperties.Builder debugResolver(Consumer<String> debugMsgConsumer) {
-            this.debugMsgResolver = debugMsgConsumer;
-            return this;
-        }
-
-        public ContextProperties.Builder logResolution(LogConsumer resolutionLogger) {
-            this.resolutionLogger = resolutionLogger;
-            return this;
-        }
-
-        public ContextProperties get() {
-            ParseVisitor visitor = new LogAndDelegateVisitor(debugMsgParser, new ContextVisitor());
-
-            PropertyParser propertyParser = new PropertyParser(
-                    visitor,
-                    new ContextPattern(
-                            CONTEXT_IDENTIFIER,
-                            CONTEXT_START_PATTERN,
-                            CONTEXT_END_PATTERN,
-                            new ConditionPattern(
-                                    CONDITION_VALUE_START_PATTERN,
-                                    CONDITION_VALUE_END_PATTERN,
-                                    visitor,
-                                    CONDITION_VALUE_DELIMITER,
-                                    CONDITION_DELIMITER),
-                            visitor));
-
-            ContextPropertyResolver propertyResolver = new ContextPropertyResolver(
-                    new PropertyValidator(predicates.domain(), requiresDefault),
-                    new PropertyResolver(predicates, debugMsgResolver),
-                    systemPropertyOverride,
-                    debugMsgResolver,
-                    resolutionLogger);
-
-            return new ContextProperties(propertyParser, propertyResolver);
-        }
-
-        public Properties resolve(Properties unresolved) {
-            return get().resolve(unresolved);
+        public TypedProperties resolveTyped(Properties ctxProperties) {
+            Properties properties = resolve(ctxProperties);
+            return new TypedProperties(properties);
         }
     }
 
-    @FunctionalInterface
-    public interface LogConsumer {
-        void log(String property, boolean systemOverride, String value, boolean isLast);
+    public static final class Builder extends AbstractBuilder<Builder> {
+
+        private final Domain domain;
+
+        Builder(Domain domain) {
+            this.domain = domain;
+        }
+
+        public ContextProperties create(Properties unresolved) {
+            final PropertyValidator validator = createValidator(domain);
+            ConcurrentMap<String, ContextProperty> propertyMap = createParser()
+                    .parse(unresolved)
+                    .stream()
+                    .map(property -> {
+                        validator.validate(property);
+                        return property;
+                    }).collect(Collectors.toConcurrentMap(ContextProperty::key, (prop) -> prop));
+            return new ContextProperties(propertyMap, createResolver());
+        }
     }
+
 }
