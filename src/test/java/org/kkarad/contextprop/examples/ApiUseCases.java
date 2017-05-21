@@ -40,7 +40,7 @@ class ApiUseCases {
                 .allowSystemPropertyOverride()
                 .debugParser(System.out::println)
                 .debugResolver(System.out::println)
-                .logResolution((property, systemOverride, value, isLast) ->
+                .resolutionConsumer((property, systemOverride, value, isLast) ->
                         System.out.format("(%s) %s -> %s", systemOverride ? "sys " : "prop", property, value))
                 .resolve(ctxProperties);
 
@@ -69,7 +69,7 @@ class ApiUseCases {
                 .create();
 
         TypedProperties properties = ContextProperties.basedOn(predicates)
-                .logResolution((property, systemOverride, value, isLast) ->
+                .resolutionConsumer((property, systemOverride, value, isLast) ->
                         System.out.format("(%s) %s -> %s%n", systemOverride ? "sys " : "prop", property, value))
                 .resolveTyped(ctxProperties);
 
@@ -93,7 +93,7 @@ class ApiUseCases {
         ctxProperties.setProperty("my.prop.bd", "-1.23");
 
         ContextProperties properties = ContextProperties.basedOnDomain(MyDomain.class)
-                .logResolution((property, systemOverride, value, isLast) ->
+                .resolutionConsumer((property, systemOverride, value, isLast) ->
                         System.out.format("(%s) %s -> %s%n", systemOverride ? "sys " : "prop", property, value))
                 .create(ctxProperties);
 

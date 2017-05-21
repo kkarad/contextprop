@@ -29,7 +29,7 @@ abstract class AbstractBuilder<T extends AbstractBuilder> {
     Consumer<String> debugMsgResolver = msg -> {
     };
 
-    LogConsumer resolutionLogger = (property, systemOverridden, value, isLast) -> {
+    ResolutionConsumer resolutionLogger = (property, systemOverridden, value, isLast) -> {
     };
 
     AbstractBuilder() {
@@ -55,7 +55,7 @@ abstract class AbstractBuilder<T extends AbstractBuilder> {
         return (T) this;
     }
 
-    public T logResolution(LogConsumer resolutionLogger) {
+    public T resolutionConsumer(ResolutionConsumer resolutionLogger) {
         this.resolutionLogger = resolutionLogger;
         return (T) this;
     }

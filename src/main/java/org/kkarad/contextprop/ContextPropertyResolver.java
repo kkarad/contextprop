@@ -15,12 +15,12 @@ class ContextPropertyResolver {
 
     private final Consumer<String> debugMsgResolver;
 
-    private final LogConsumer resolutionLogger;
+    private final ResolutionConsumer resolutionLogger;
 
     ContextPropertyResolver(PropertyResolver resolver,
                             boolean systemPropertyOverride,
                             Consumer<String> debugMsgResolver,
-                            LogConsumer resolutionLogger) {
+                            ResolutionConsumer resolutionLogger) {
         this.resolver = resolver;
         this.systemPropertyOverride = systemPropertyOverride;
         this.debugMsgResolver = debugMsgResolver;
@@ -56,7 +56,7 @@ class ContextPropertyResolver {
         }
 
         debugMsgResolver.accept(format("ContextPropertyResolver.resolve -> finished '%s'", property.key()));
-        resolutionLogger.log(property.key(), overridden, value, isLast);
+        resolutionLogger.onResolution(property.key(), overridden, value, isLast);
         return value;
     }
 }
