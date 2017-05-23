@@ -45,13 +45,15 @@ final class PropertyResolver {
             String domainPredicate = predicates.value(condition.domainKey());
             Objects.requireNonNull(domainPredicate, "Unknown domain key: " + condition.domainKey());
             if (!condition.containsValue(domainPredicate)) {
-                debugMsgResolver.accept(format("PropertyResolver.findMatch -> condition (%s) does not match with context (%s)", condition, context));
+                debugMsgResolver.accept(format("PropertyResolver.match -> condition (%s) does not match predicate (%s) (context: %s)",
+                        condition, domainPredicate, context));
                 return 0;
             }
-            debugMsgResolver.accept(format("PropertyResolver.findMatch -> condition (%s) matches with context (%s)", condition, context));
+            debugMsgResolver.accept(format("PropertyResolver.match -> condition (%s) matches predicate (%s) (context: %s)",
+                    condition, domainPredicate, context));
             matches++;
         }
-        debugMsgResolver.accept(format("PropertyResolver.findMatch -> context (%s) matched %s times", context, matches));
+        debugMsgResolver.accept(format("PropertyResolver.match -> context (%s) matched %s times", context, matches));
         return matches;
     }
 }
